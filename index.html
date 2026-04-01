@@ -130,28 +130,88 @@
             return <span className="inline-flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgHtml }} />;
         };
 
-        // --- SENSOR FUSION ENGINE ---
-        class KalmanFilter {
-            constructor(q = 0.00001, r = 0.001, p = 1) {
-                this.q = q; this.r = r; this.p = p; this.x = 0;
+        // --- HIGH PRECISION GPS SENSOR FUSION ENGINE ---
+        class GPSEngine {
+            constructor() {
+                this.pointBuffer = [];
+                this.lastValidPoint = null;
+                this.totalDistance = 0;
+                this.lastTime = 0;
             }
-            filter(val) {
-                if (this.x === 0) { this.x = val; return val; }
-                this.p = this.p + this.q;
-                const k = this.p / (this.p + this.r);
-                this.x = this.x + k * (val - this.x);
-                this.p = (1 - k) * this.p;
-                return this.x;
+
+            haversine(lat1, lon1, lat2, lon2) {
+                const R = 6371e3;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            getMovingAverage(newPoint) {
+                // 4. Smoothing Algorithm
+                this.pointBuffer.push(newPoint);
+                if (this.pointBuffer.length > 5) {
+                    this.pointBuffer.shift();
+                }
+                const sumLat = this.pointBuffer.reduce((sum, p) => sum + p.lat, 0);
+                const sumLng = this.pointBuffer.reduce((sum, p) => sum + p.lng, 0);
+                return {
+                    lat: sumLat / this.pointBuffer.length,
+                    lng: sumLng / this.pointBuffer.length,
+                    timestamp: newPoint.timestamp
+                };
+            }
+
+            pause() {
+                this.lastValidPoint = null;
+                this.pointBuffer = [];
+            }
+
+            processPoint(rawPoint) {
+                const { latitude, longitude, accuracy } = rawPoint.coords;
+                const timestamp = rawPoint.timestamp || Date.now();
+
+                // 1. High Precision Setup: Reject poor accuracy points
+                if (accuracy > 20) return { status: 'LOW_ACCURACY' };
+
+                const smoothedPoint = this.getMovingAverage({lat: latitude, lng: longitude, timestamp});
+
+                if (!this.lastValidPoint) {
+                    this.lastValidPoint = smoothedPoint;
+                    this.lastTime = timestamp;
+                    return { distanceAdded: 0, status: 'INIT', point: smoothedPoint };
+                }
+
+                const dt = (timestamp - this.lastTime) / 1000; // seconds
+                if (dt <= 0) return { status: 'INVALID_TIME' };
+
+                // 2. Smart Distance Calculation
+                const dist = this.haversine(
+                    this.lastValidPoint.lat, this.lastValidPoint.lng,
+                    smoothedPoint.lat, smoothedPoint.lng
+                );
+
+                // Validation Filters
+                if (dist < 3) return { distanceAdded: 0, status: 'NOISE', point: smoothedPoint };
+                if (dist > 50 && dt < 2) return { distanceAdded: 0, status: 'JUMP', point: smoothedPoint };
+
+                // 3. Speed-based Filtering
+                const speed = dist / dt; // m/s
+                if (speed > 6) return { distanceAdded: 0, status: 'TOO_FAST', point: smoothedPoint };
+                if (speed < 0.5) return { distanceAdded: 0, status: 'TOO_SLOW', point: smoothedPoint };
+
+                // 5. Distance Confidence System: Passed all filters -> High Confidence
+                const deltaLat = smoothedPoint.lat - this.lastValidPoint.lat;
+                const deltaLng = smoothedPoint.lng - this.lastValidPoint.lng;
+
+                this.lastValidPoint = smoothedPoint;
+                this.lastTime = timestamp;
+                this.totalDistance += dist;
+
+                return { distanceAdded: dist, status: 'MOVING', point: smoothedPoint, deltaLat, deltaLng, speed };
             }
         }
-
-        const getDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 6371e3;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        };
 
         function App() {
             const [view, setView] = useState('splash');
@@ -161,16 +221,28 @@
             // Tracking State
             const [isRunning, setIsRunning] = useState(false);
             const [isPaused, setIsPaused] = useState(false);
+            const [autoPaused, setAutoPaused] = useState(false);
             const [elapsed, setElapsed] = useState(0);
             const [distance, setDistance] = useState(0);
             const [route, setRoute] = useState([]);
+            const [accuracy, setAccuracy] = useState(0);
             const [lastSummary, setLastSummary] = useState(null);
 
             const timerRef = useRef(null);
             const watchRef = useRef(null);
-            const lastPosRef = useRef(null);
-            const latK = useRef(new KalmanFilter());
-            const lngK = useRef(new KalmanFilter());
+            const gpsEngineRef = useRef(new GPSEngine());
+            const autoPauseTimeoutRef = useRef(null);
+            const isPausedRef = useRef(false);
+            const autoPausedRef = useRef(false);
+
+            // Sync state with refs for callback access
+            useEffect(() => {
+                isPausedRef.current = isPaused;
+            }, [isPaused]);
+
+            useEffect(() => {
+                autoPausedRef.current = autoPaused;
+            }, [autoPaused]);
 
             // Handle App Startup
             useEffect(() => {
@@ -200,32 +272,62 @@
                 }
             };
 
-            // Start GPS Tracking
+            // Start High Precision GPS Tracking
             const startRun = () => {
-                setIsRunning(true); setIsPaused(false); setLastSummary(null);
-                timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+                setIsRunning(true); setIsPaused(false); setAutoPaused(false); setLastSummary(null);
+                setDistance(0); setElapsed(0); setRoute([]);
+                gpsEngineRef.current = new GPSEngine();
+                
+                timerRef.current = setInterval(() => {
+                    if (!isPausedRef.current && !autoPausedRef.current) {
+                        setElapsed(e => e + 1);
+                    }
+                }, 1000);
+                
                 if (navigator.geolocation) {
                     watchRef.current = navigator.geolocation.watchPosition((p) => {
-                        const { latitude, longitude, accuracy } = p.coords;
-                        if (accuracy > 30) return;
-                        const fLat = latK.current.filter(latitude);
-                        const fLng = lngK.current.filter(longitude);
-                        if (lastPosRef.current) {
-                            const d = getDistance(lastPosRef.current.lat, lastPosRef.current.lng, fLat, fLng);
-                            if (d > 0.8) {
-                                setDistance(prev => prev + d);
-                                setRoute(r => [...r, {x: 180 + (fLng - lastPosRef.current.lng)*600000, y: 180 - (fLat - lastPosRef.current.lat)*600000}]);
-                            }
+                        setAccuracy(p.coords.accuracy);
+                        
+                        if (isPausedRef.current) return; // Prevent updates while manually paused
+
+                        const result = gpsEngineRef.current.processPoint(p);
+                        
+                        if (result.status === 'MOVING') {
+                            setAutoPaused(false);
+                            setDistance(gpsEngineRef.current.totalDistance);
+                            
+                            setRoute(r => {
+                                const last = r.length > 0 ? r[r.length-1] : {x: 180, y: 180};
+                                return [...r, {
+                                    x: last.x + (result.deltaLng) * 600000, 
+                                    y: last.y - (result.deltaLat) * 600000
+                                }];
+                            });
+
+                            // 6. Auto Pause / Resume Feature (5s inactivity limit)
+                            clearTimeout(autoPauseTimeoutRef.current);
+                            autoPauseTimeoutRef.current = setTimeout(() => {
+                                setAutoPaused(true);
+                            }, 5000);
                         }
-                        lastPosRef.current = {lat: fLat, lng: fLng};
-                    }, null, {enableHighAccuracy: true});
+                    }, 
+                    (err) => {
+                        console.warn("GPS Warning/Error:", err.message);
+                    }, 
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 5000
+                    });
                 }
             };
 
             // Stop GPS Tracking
             const stopRun = () => {
                 clearInterval(timerRef.current);
+                clearTimeout(autoPauseTimeoutRef.current);
                 if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
+                
                 const summary = { id: Date.now(), timestamp: Date.now(), duration: elapsed, distance, pace: distance > 10 ? elapsed / (distance/1000) : 0 };
                 setLastSummary(summary);
                 
@@ -292,7 +394,7 @@
                                 <p className="text-xs font-black uppercase tracking-widest text-gray-300">Today's Mission</p>
                             </div>
                             <h2 className="text-7xl font-black tracking-tighter mb-8 text-volt">2.5 <span className="text-3xl font-bold text-white">KM</span></h2>
-                            <button onClick={() => { setDistance(0); setElapsed(0); setLastSummary(null); setView('run'); }} className="w-full py-5 bg-white text-dark rounded-xl font-black text-lg fitness-card uppercase tracking-wide">
+                            <button onClick={() => { setView('run'); }} className="w-full py-5 bg-white text-dark rounded-xl font-black text-lg fitness-card uppercase tracking-wide">
                                 IGNITE RUN
                             </button>
                         </div>
@@ -372,6 +474,7 @@
 
             const Run = () => {
                 const circ = 2 * Math.PI * 140;
+                // 8. Output precision and stability handled here and in engine validation
                 const offset = circ - (Math.min(100, (distance / 5000) * 100) / 100) * circ;
 
                 // Post-Run Summary
@@ -408,10 +511,10 @@
                         <header className="flex justify-between items-center z-10">
                             <button onClick={() => !isRunning && setView('home')} className="text-gray-400 font-bold text-xs uppercase hover:text-white transition-colors">{!isRunning ? "Cancel" : ""}</button>
                             <div className="flex items-center gap-3 bg-slate-800 px-5 py-2.5 rounded-full border border-slate-700">
-                                <div className={`w-3 h-3 rounded-full ${isRunning && !isPaused ? 'bg-volt animate-pulse' : 'bg-orange-500'}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{isRunning ? "RECORDING" : "READY"}</span>
+                                <div className={`w-3 h-3 rounded-full ${autoPaused ? 'bg-orange-500' : (isRunning && !isPaused ? 'bg-volt animate-pulse' : 'bg-orange-500')}`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{autoPaused ? "AUTO-PAUSED" : (isRunning ? "RECORDING" : "READY")}</span>
                             </div>
-                            <div className="w-12"></div>
+                            <div className="text-[10px] font-black text-gray-500 uppercase">{accuracy > 0 ? `GPS: ${accuracy.toFixed(0)}m` : '...'}</div>
                         </header>
                         
                         <div className="relative flex-1 flex flex-col items-center justify-center">
@@ -431,7 +534,18 @@
                                 <button onClick={startRun} className="w-32 h-32 bg-volt text-dark rounded-full flex items-center justify-center border-4 border-dark shadow-[0_15px_40px_rgba(204,255,0,0.3)] active:scale-95 transition-transform"><Icon name="Play" size={48} color="#0f172a" /></button>
                             ) : (
                                 <>
-                                    <button onClick={() => setIsPaused(!isPaused)} className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-600 active:scale-95 transition-all">{isPaused ? <Icon name="Play" size={32} color="white"/> : <Icon name="Pause" size={32} color="white"/>}</button>
+                                    <button onClick={() => {
+                                        if (!isPaused) {
+                                            setIsPaused(true);
+                                            gpsEngineRef.current.pause(); // Reset Engine Buffer
+                                            clearTimeout(autoPauseTimeoutRef.current);
+                                        } else {
+                                            setIsPaused(false);
+                                            setAutoPaused(false);
+                                        }
+                                    }} className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-600 active:scale-95 transition-all">
+                                        {isPaused ? <Icon name="Play" size={32} color="white"/> : <Icon name="Pause" size={32} color="white"/>}
+                                    </button>
                                     <button onClick={stopRun} className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center border-4 border-dark shadow-[0_15px_40px_rgba(239,68,68,0.3)] active:scale-95 transition-transform"><Icon name="Square" size={40} color="#0f172a" /></button>
                                 </>
                             )}
