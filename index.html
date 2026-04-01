@@ -3,39 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Runo Fitness | Elite Performance</title>
+    <title>Runo | Fitness Tracker</title>
     <!-- Core Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Icons and Animations -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        volt: '#ccff00', // High-energy fitness green
-                        dark: '#0f172a'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
-        body {
+        body, html {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* Crisp light background */
+            background-color: #e2e8f0; /* Visible Slate Gray Background */
             margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
             overscroll-behavior: none;
@@ -45,39 +30,38 @@
             scroll-behavior: smooth;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            overscroll-behavior-y: contain;
         }
         .custom-scroll::-webkit-scrollbar { display: none; }
 
-        /* High-Energy UI Elements */
+        /* Billion-Dollar UI Shadows & Borders */
         .fitness-card {
             border: 2px solid #0f172a;
-            box-shadow: 4px 6px 0px #0f172a;
+            box-shadow: 4px 5px 0px #0f172a;
             transition: all 0.2s ease;
         }
-
         .fitness-card:active {
             transform: translate(2px, 3px);
-            box-shadow: 2px 3px 0px #0f172a;
+            box-shadow: 1px 2px 0px #0f172a;
         }
 
-        /* Premium Navigation Dock */
+        /* Bottom Nav Box UI */
         .nav-dock-container {
             padding-bottom: env(safe-area-inset-bottom, 20px);
         }
-
-        /* Visible Box Navigation Buttons */
+        
         .nav-item-box {
-            border: 2px solid transparent;
+            border: 2px solid #cbd5e1;
+            background-color: #ffffff;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
         }
 
         .nav-item-box.active {
-            background-color: #ccff00; /* Volt green */
-            border: 2px solid #0f172a; /* Clear black border */
-            box-shadow: 0px 4px 0px #0f172a;
+            background-color: #ffffff;
+            border: 2.5px solid #0f172a; 
+            box-shadow: 3px 4px 0px #0f172a;
             transform: translateY(-4px);
         }
-        
         .nav-item-box.active:active {
             transform: translateY(0px);
             box-shadow: 0px 0px 0px #0f172a;
@@ -88,14 +72,6 @@
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
-
-        .upload-overlay {
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .profile-pic-container:hover .upload-overlay {
-            opacity: 1;
-        }
     </style>
 </head>
 <body>
@@ -104,112 +80,95 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- ROBUST ICON COMPONENT ---
+        // --- HARDCODED ICONS (100% Guaranteed Visibility) ---
         const Icon = ({ name, size = 24, className = "", color = "currentColor" }) => {
-            const [svgHtml, setSvgHtml] = useState('');
-            
-            useEffect(() => {
-                if (window.lucide && window.lucide.icons[name]) {
-                    try {
-                        const iconData = window.lucide.icons[name];
-                        const childrenHtml = iconData[1].map(child => {
-                            const tag = child[0];
-                            const attrs = Object.entries(child[1]).map(([k, v]) => `${k}="${v}"`).join(' ');
-                            return `<${tag} ${attrs}></${tag}>`;
-                        }).join('');
-                        
-                        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}">${childrenHtml}</svg>`;
-                        setSvgHtml(svg);
-                    } catch (e) {
-                        console.error("Icon Error:", e);
-                    }
-                }
-            }, [name, size, className, color]);
-
-            if (!svgHtml) return <span style={{width: size, height: size, display: 'inline-block'}} />;
-            return <span className="inline-flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgHtml }} />;
+            const icons = {
+                // Matches the solid house image you provided exactly
+                HomeSolid: <svg viewBox="0 0 24 24" width={size} height={size} fill={color} className={className}><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>,
+                BarChart2: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>,
+                User: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
+                Activity: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
+                Flame: <svg viewBox="0 0 24 24" width={size} height={size} fill={color} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>,
+                TrendingUp: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>,
+                Shield: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
+                Navigation: <svg viewBox="0 0 24 24" width={size} height={size} fill={color} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>,
+                Play: <svg viewBox="0 0 24 24" width={size} height={size} fill={color} stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+                Pause: <svg viewBox="0 0 24 24" width={size} height={size} fill={color} stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>,
+                Square: <svg viewBox="0 0 24 24" width={size} height={size} fill={color} stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>,
+                ChevronRight: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>,
+                ChevronLeft: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="15 18 9 12 15 6"></polyline></svg>,
+                MessageSquare: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
+                Settings: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
+                Camera: <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+            };
+            return icons[name] || <span style={{width: size, height: size, display: 'inline-block'}}/>;
         };
 
-        // --- HIGH PRECISION GPS SENSOR FUSION ENGINE ---
+        // --- GPS LOGIC ---
         class GPSEngine {
             constructor() {
                 this.pointBuffer = [];
                 this.lastValidPoint = null;
                 this.totalDistance = 0;
                 this.lastTime = 0;
+                this.lowSpeedDuration = 0;
             }
 
             haversine(lat1, lon1, lat2, lon2) {
                 const R = 6371e3;
                 const dLat = (lat2 - lat1) * Math.PI / 180;
                 const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
-                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
                 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
 
             getMovingAverage(newPoint) {
-                // 4. Smoothing Algorithm
                 this.pointBuffer.push(newPoint);
-                if (this.pointBuffer.length > 5) {
-                    this.pointBuffer.shift();
-                }
+                if (this.pointBuffer.length > 5) this.pointBuffer.shift();
                 const sumLat = this.pointBuffer.reduce((sum, p) => sum + p.lat, 0);
                 const sumLng = this.pointBuffer.reduce((sum, p) => sum + p.lng, 0);
-                return {
-                    lat: sumLat / this.pointBuffer.length,
-                    lng: sumLng / this.pointBuffer.length,
-                    timestamp: newPoint.timestamp
-                };
-            }
-
-            pause() {
-                this.lastValidPoint = null;
-                this.pointBuffer = [];
+                return { lat: sumLat / this.pointBuffer.length, lng: sumLng / this.pointBuffer.length, timestamp: newPoint.timestamp };
             }
 
             processPoint(rawPoint) {
                 const { latitude, longitude, accuracy } = rawPoint.coords;
                 const timestamp = rawPoint.timestamp || Date.now();
-
-                // 1. High Precision Setup: Reject poor accuracy points
-                if (accuracy > 20) return { status: 'LOW_ACCURACY' };
+                if (accuracy > 20) return { status: 'LOW_ACCURACY', distance: this.totalDistance };
 
                 const smoothedPoint = this.getMovingAverage({lat: latitude, lng: longitude, timestamp});
-
                 if (!this.lastValidPoint) {
                     this.lastValidPoint = smoothedPoint;
                     this.lastTime = timestamp;
-                    return { distanceAdded: 0, status: 'INIT', point: smoothedPoint };
+                    return { status: 'INIT', distance: this.totalDistance, point: smoothedPoint };
                 }
 
-                const dt = (timestamp - this.lastTime) / 1000; // seconds
-                if (dt <= 0) return { status: 'INVALID_TIME' };
+                const dt = (timestamp - this.lastTime) / 1000; 
+                if (dt <= 0) return { status: 'INVALID_TIME', distance: this.totalDistance };
 
-                // 2. Smart Distance Calculation
-                const dist = this.haversine(
-                    this.lastValidPoint.lat, this.lastValidPoint.lng,
-                    smoothedPoint.lat, smoothedPoint.lng
-                );
+                const dist = this.haversine(this.lastValidPoint.lat, this.lastValidPoint.lng, smoothedPoint.lat, smoothedPoint.lng);
+                
+                if (dist > 50 && dt < 2) return { status: 'JUMP', distance: this.totalDistance };
+                if (dist < 3) return { status: 'NOISE', distance: this.totalDistance };
 
-                // Validation Filters
-                if (dist < 3) return { distanceAdded: 0, status: 'NOISE', point: smoothedPoint };
-                if (dist > 50 && dt < 2) return { distanceAdded: 0, status: 'JUMP', point: smoothedPoint };
+                const speedMs = dist / dt;
+                const speedKmh = speedMs * 3.6;
+                if (speedMs > 6) return { status: 'TOO_FAST', distance: this.totalDistance };
 
-                // 3. Speed-based Filtering
-                const speed = dist / dt; // m/s
-                if (speed > 6) return { distanceAdded: 0, status: 'TOO_FAST', point: smoothedPoint };
-                if (speed < 0.5) return { distanceAdded: 0, status: 'TOO_SLOW', point: smoothedPoint };
+                let isAutoPaused = false;
+                if (speedKmh < 1) {
+                    this.lowSpeedDuration += dt;
+                    if (this.lowSpeedDuration >= 5) isAutoPaused = true;
+                } else {
+                    this.lowSpeedDuration = 0;
+                }
 
-                // 5. Distance Confidence System: Passed all filters -> High Confidence
-                const deltaLat = smoothedPoint.lat - this.lastValidPoint.lat;
-                const deltaLng = smoothedPoint.lng - this.lastValidPoint.lng;
+                if (!isAutoPaused) {
+                    this.totalDistance += dist;
+                    this.lastValidPoint = smoothedPoint;
+                    this.lastTime = timestamp;
+                }
 
-                this.lastValidPoint = smoothedPoint;
-                this.lastTime = timestamp;
-                this.totalDistance += dist;
-
-                return { distanceAdded: dist, status: 'MOVING', point: smoothedPoint, deltaLat, deltaLng, speed };
+                return { status: isAutoPaused ? 'AUTO_PAUSED' : 'MOVING', distance: this.totalDistance, point: smoothedPoint, speed: speedKmh };
             }
         }
 
@@ -224,27 +183,21 @@
             const [autoPaused, setAutoPaused] = useState(false);
             const [elapsed, setElapsed] = useState(0);
             const [distance, setDistance] = useState(0);
-            const [route, setRoute] = useState([]);
+            const [currentSpeed, setCurrentSpeed] = useState(0);
             const [accuracy, setAccuracy] = useState(0);
             const [lastSummary, setLastSummary] = useState(null);
 
-            const timerRef = useRef(null);
+            const runDataRef = useRef({ startTime: 0, totalPausedTime: 0, pauseStartTime: 0, distance: 0, speed: 0, accuracy: 0, lastUiUpdate: 0 });
+            const rAFRef = useRef(null);
             const watchRef = useRef(null);
             const gpsEngineRef = useRef(new GPSEngine());
-            const autoPauseTimeoutRef = useRef(null);
             const isPausedRef = useRef(false);
             const autoPausedRef = useRef(false);
 
-            // Sync state with refs for callback access
-            useEffect(() => {
-                isPausedRef.current = isPaused;
-            }, [isPaused]);
+            useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+            useEffect(() => { autoPausedRef.current = autoPaused; }, [autoPaused]);
 
-            useEffect(() => {
-                autoPausedRef.current = autoPaused;
-            }, [autoPaused]);
-
-            // Handle App Startup
+            // Handle Startup
             useEffect(() => {
                 const timer = setTimeout(() => {
                     const saved = localStorage.getItem('runo_user');
@@ -258,7 +211,7 @@
                 return () => clearTimeout(timer);
             }, []);
 
-            // Handle Profile Image Upload
+            // Profile Picture
             const handleImageUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -272,171 +225,197 @@
                 }
             };
 
-            // Start High Precision GPS Tracking
+            const updateUI = useCallback(() => {
+                const now = Date.now();
+                if (now - runDataRef.current.lastUiUpdate >= 500) {
+                    let elapsedMs = 0;
+                    if (isPausedRef.current || autoPausedRef.current) {
+                        elapsedMs = runDataRef.current.pauseStartTime - runDataRef.current.startTime - runDataRef.current.totalPausedTime;
+                    } else {
+                        elapsedMs = now - runDataRef.current.startTime - runDataRef.current.totalPausedTime;
+                    }
+                    setElapsed(Math.max(0, Math.floor(elapsedMs / 1000)));
+                    setDistance(runDataRef.current.distance);
+                    setCurrentSpeed(runDataRef.current.speed);
+                    setAccuracy(runDataRef.current.accuracy);
+                    runDataRef.current.lastUiUpdate = now;
+                }
+                rAFRef.current = requestAnimationFrame(updateUI);
+            }, []);
+
             const startRun = () => {
                 setIsRunning(true); setIsPaused(false); setAutoPaused(false); setLastSummary(null);
-                setDistance(0); setElapsed(0); setRoute([]);
+                setDistance(0); setElapsed(0); setCurrentSpeed(0);
                 gpsEngineRef.current = new GPSEngine();
-                
-                timerRef.current = setInterval(() => {
-                    if (!isPausedRef.current && !autoPausedRef.current) {
-                        setElapsed(e => e + 1);
-                    }
-                }, 1000);
+                runDataRef.current = { startTime: Date.now(), totalPausedTime: 0, pauseStartTime: 0, distance: 0, speed: 0, accuracy: 0, lastUiUpdate: 0 };
+
+                if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
+                rAFRef.current = requestAnimationFrame(updateUI);
                 
                 if (navigator.geolocation) {
                     watchRef.current = navigator.geolocation.watchPosition((p) => {
-                        setAccuracy(p.coords.accuracy);
-                        
-                        if (isPausedRef.current) return; // Prevent updates while manually paused
+                        runDataRef.current.accuracy = p.coords.accuracy;
+                        if (isPausedRef.current) return; 
 
                         const result = gpsEngineRef.current.processPoint(p);
-                        
                         if (result.status === 'MOVING') {
-                            setAutoPaused(false);
-                            setDistance(gpsEngineRef.current.totalDistance);
-                            
-                            setRoute(r => {
-                                const last = r.length > 0 ? r[r.length-1] : {x: 180, y: 180};
-                                return [...r, {
-                                    x: last.x + (result.deltaLng) * 600000, 
-                                    y: last.y - (result.deltaLat) * 600000
-                                }];
-                            });
-
-                            // 6. Auto Pause / Resume Feature (5s inactivity limit)
-                            clearTimeout(autoPauseTimeoutRef.current);
-                            autoPauseTimeoutRef.current = setTimeout(() => {
+                            if (autoPausedRef.current) {
+                                setAutoPaused(false);
+                                runDataRef.current.totalPausedTime += (Date.now() - runDataRef.current.pauseStartTime);
+                            }
+                            runDataRef.current.distance = result.distance;
+                            runDataRef.current.speed = result.speed || 0;
+                        } else if (result.status === 'AUTO_PAUSED') {
+                            if (!autoPausedRef.current) {
                                 setAutoPaused(true);
-                            }, 5000);
+                                runDataRef.current.pauseStartTime = Date.now();
+                                runDataRef.current.speed = 0;
+                            }
                         }
-                    }, 
-                    (err) => {
-                        console.warn("GPS Warning/Error:", err.message);
-                    }, 
-                    {
-                        enableHighAccuracy: true,
-                        maximumAge: 0,
-                        timeout: 5000
-                    });
+                    }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
                 }
             };
 
-            // Stop GPS Tracking
+            const togglePause = () => {
+                if (!isPaused) {
+                    setIsPaused(true);
+                    runDataRef.current.pauseStartTime = Date.now();
+                    runDataRef.current.speed = 0;
+                } else {
+                    setIsPaused(false);
+                    setAutoPaused(false);
+                    runDataRef.current.totalPausedTime += (Date.now() - runDataRef.current.pauseStartTime);
+                }
+            };
+
             const stopRun = () => {
-                clearInterval(timerRef.current);
-                clearTimeout(autoPauseTimeoutRef.current);
+                if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
                 if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
                 
-                const summary = { id: Date.now(), timestamp: Date.now(), duration: elapsed, distance, pace: distance > 10 ? elapsed / (distance/1000) : 0 };
+                const finalDistanceKm = runDataRef.current.distance / 1000;
+                let elapsedMs = (isPausedRef.current || autoPausedRef.current) ? 
+                    (runDataRef.current.pauseStartTime - runDataRef.current.startTime - runDataRef.current.totalPausedTime) : 
+                    (Date.now() - runDataRef.current.startTime - runDataRef.current.totalPausedTime);
+                const finalElapsed = Math.max(0, Math.floor(elapsedMs / 1000));
+                
+                const summary = { id: Date.now(), timestamp: Date.now(), duration: finalElapsed, distance: runDataRef.current.distance, pace: finalDistanceKm > 0 ? finalElapsed / finalDistanceKm : 0 };
                 setLastSummary(summary);
                 
-                if (distance > 10) {
+                if (runDataRef.current.distance > 10) { 
                     setRuns(prev => [summary, ...prev]);
-                    const updatedUser = { ...userData, streak: (userData?.streak || 0) + 1, totalKm: (userData?.totalKm || 0) + (distance/1000) };
+                    const updatedUser = { ...userData, streak: (userData?.streak || 0) + 1, totalKm: (userData?.totalKm || 0) + finalDistanceKm };
                     setUserData(updatedUser);
                     localStorage.setItem('runo_user', JSON.stringify(updatedUser));
                 }
                 setIsRunning(false);
             };
 
+            // Formatting
+            const formatPace = (totalSeconds, distanceMeters) => {
+                if (distanceMeters < 10 || totalSeconds === 0) return "0:00";
+                const pace = totalSeconds / (distanceMeters / 1000);
+                if (pace > 3599) return "59:59"; 
+                return `${Math.floor(pace / 60)}:${Math.floor(pace % 60).toString().padStart(2, '0')}`;
+            };
+            const formatTime = (totalSeconds) => {
+                return `${Math.floor(totalSeconds / 60).toString().padStart(2, '0')}:${(totalSeconds % 60).toString().padStart(2, '0')}`;
+            };
+
             // --- SCREENS ---
 
             const Splash = () => (
-                <div className="h-[100dvh] bg-dark flex flex-col items-center justify-center animate__animated animate__fadeIn">
-                    <div className="w-28 h-28 bg-volt rounded-[2rem] rotate-45 flex items-center justify-center shadow-[0_0_50px_rgba(204,255,0,0.4)] animate__animated animate__zoomIn">
-                        <Icon name="Activity" size={56} color="#0f172a" className="-rotate-45" />
+                <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center animate__animated animate__fadeIn">
+                    <div className="w-28 h-28 bg-blue-500 rounded-[2rem] rotate-45 flex items-center justify-center shadow-2xl animate__animated animate__zoomIn">
+                        <Icon name="Activity" size={56} color="white" className="-rotate-45" />
                     </div>
-                    <h1 className="text-white mt-12 font-black tracking-[0.5em] uppercase text-2xl drop-shadow-md">RUNO</h1>
-                    <p className="text-volt mt-2 text-[10px] font-bold tracking-widest uppercase">Energy & Focus</p>
+                    <h1 className="text-white mt-12 font-black tracking-[0.4em] uppercase text-3xl drop-shadow-md">RUNO</h1>
                 </div>
             );
 
+            // FIXED Welcome Screen
             const Onboarding = () => (
-                <div className="h-[100dvh] bg-dark text-white p-8 flex flex-col justify-center items-center text-center">
-                    <div className="w-24 h-24 bg-volt rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(204,255,0,0.5)]">
-                        <Icon name="Zap" size={48} color="#0f172a" />
+                <div className="fixed inset-0 bg-slate-900 text-white p-8 flex flex-col justify-center items-center text-center">
+                    <div className="w-24 h-24 bg-blue-500 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl">
+                        <Icon name="User" size={48} color="white" />
                     </div>
                     <h1 className="text-6xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp">Welcome.</h1>
-                    <p className="text-gray-400 mb-20 uppercase tracking-widest text-xs font-bold leading-relaxed">Unleash your potential.<br/>Your fitness journey starts now.</p>
-                    
+                    <p className="text-slate-300 mb-20 uppercase tracking-widest text-xs font-bold leading-relaxed">Your fitness journey<br/>starts here.</p>
                     <button 
                         onClick={() => { 
                             const newUser = { name: "Athlete", streak: 0, totalKm: 0, shields: 1, joined: Date.now(), profilePic: null };
-                            setUserData(newUser); 
-                            localStorage.setItem('runo_user', JSON.stringify(newUser));
-                            setView('home'); 
+                            setUserData(newUser); localStorage.setItem('runo_user', JSON.stringify(newUser)); setView('home'); 
                         }} 
-                        className="w-full py-6 bg-volt text-dark rounded-[2rem] font-black text-xl fitness-card"
+                        className="w-full py-6 bg-white text-slate-900 rounded-[2rem] font-black text-xl fitness-card uppercase tracking-widest"
                     >
-                        GET STARTED
+                        Get Started
                     </button>
                 </div>
             );
 
             const Home = () => (
-                <div className="h-full px-6 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                <div className="fixed inset-0 px-6 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
                     <header className="flex justify-between items-center mb-10">
                         <div>
-                            <p className="text-xs font-black uppercase tracking-widest text-gray-500">Runo Fitness</p>
-                            <h1 className="text-4xl font-black tracking-tighter text-dark">Get After It.</h1>
+                            <p className="text-xs font-black uppercase tracking-widest text-slate-500">Runo Fitness</p>
+                            <h1 className="text-4xl font-black tracking-tighter text-slate-900">Good Morning.</h1>
                         </div>
-                        <div className="bg-white px-5 py-2.5 rounded-[1.2rem] font-bold flex items-center gap-2 border-2 border-dark shadow-[2px_3px_0px_#0f172a] text-dark">
+                        <div className="bg-white px-5 py-2.5 rounded-[1.2rem] font-bold flex items-center gap-2 fitness-card text-slate-900">
                             <Icon name="Flame" size={20} color="#ea580c" /> {userData?.streak || 0}
                         </div>
                     </header>
 
-                    {/* High Energy Target Card */}
-                    <div className="relative bg-dark rounded-[2.5rem] p-8 text-white mb-10 border-2 border-dark shadow-[6px_8px_0px_#0f172a] overflow-hidden">
+                    {/* VIBRANT Blue Target Card */}
+                    <div className="relative bg-blue-600 rounded-[2.5rem] p-8 text-white mb-10 fitness-card overflow-hidden">
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-4">
-                                <div className="w-3 h-3 bg-volt rounded-full animate-pulse"></div>
-                                <p className="text-xs font-black uppercase tracking-widest text-gray-300">Today's Mission</p>
+                                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                                <p className="text-xs font-black uppercase tracking-widest text-blue-100">Today's Mission</p>
                             </div>
-                            <h2 className="text-7xl font-black tracking-tighter mb-8 text-volt">2.5 <span className="text-3xl font-bold text-white">KM</span></h2>
-                            <button onClick={() => { setView('run'); }} className="w-full py-5 bg-white text-dark rounded-xl font-black text-lg fitness-card uppercase tracking-wide">
-                                IGNITE RUN
+                            <h2 className="text-7xl font-black tracking-tighter mb-8 text-white">2.5 <span className="text-3xl font-bold opacity-80">KM</span></h2>
+                            <button onClick={() => setView('run')} className="w-full py-5 bg-slate-900 text-white rounded-xl font-black text-lg fitness-card uppercase tracking-widest">
+                                START RUN
                             </button>
                         </div>
-                        <Icon name="Target" size={250} color="rgba(255,255,255,0.05)" className="absolute -right-10 -bottom-10 pointer-events-none" />
+                        <Icon name="Navigation" size={200} color="rgba(255,255,255,0.1)" className="absolute -right-5 -bottom-5 pointer-events-none" />
                     </div>
 
+                    {/* Highly Visible Colored Stats Cards */}
                     <div className="grid grid-cols-2 gap-4 mb-10">
-                        <div className="p-6 bg-white rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
-                            <Icon name="TrendingUp" size={32} color="#0f172a" className="mb-4" />
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Distance</p>
-                            <p className="text-3xl font-black tracking-tighter text-dark">{(userData?.totalKm || 0).toFixed(1)} <span className="text-sm">KM</span></p>
+                        <div className="p-6 bg-slate-800 rounded-[2rem] fitness-card">
+                            <Icon name="TrendingUp" size={32} color="#60a5fa" className="mb-4" />
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total Distance</p>
+                            <p className="text-3xl font-black tracking-tighter text-white">{(userData?.totalKm || 0).toFixed(1)} <span className="text-sm">KM</span></p>
                         </div>
-                        <div className="p-6 bg-volt rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
-                            <Icon name="Shield" size={32} color="#0f172a" className="mb-4" />
-                            <p className="text-[10px] font-black text-dark uppercase tracking-widest mb-1">Streak Shields</p>
-                            <p className="text-3xl font-black tracking-tighter text-dark">{userData?.shields || 1}</p>
+                        <div className="p-6 bg-purple-600 rounded-[2rem] fitness-card">
+                            <Icon name="Shield" size={32} color="#e9d5ff" className="mb-4" />
+                            <p className="text-[10px] font-black text-purple-200 uppercase tracking-widest mb-1">Streak Shields</p>
+                            <p className="text-3xl font-black tracking-tighter text-white">{userData?.shields || 1}</p>
                         </div>
                     </div>
 
-                    <h3 className="font-black text-xl tracking-tight mb-6 px-2 text-dark uppercase">Recent Activity</h3>
+                    <h3 className="font-black text-xl tracking-tight mb-6 px-2 text-slate-900 uppercase">Recent Activity</h3>
                     <div className="space-y-4">
                         {runs.length > 0 ? (
-                            runs.slice(0,3).map((r, i) => (
-                                <div key={r.id} className="p-5 bg-white rounded-2xl flex items-center justify-between border-2 border-gray-200 animate__animated animate__fadeInUp" style={{animationDelay: `${i*0.1}s`}}>
+                            runs.slice(0,5).map((r, i) => (
+                                <div key={r.id} className="p-5 bg-white rounded-2xl flex items-center justify-between fitness-card animate__animated animate__fadeInUp" style={{animationDelay: `${i*0.1}s`}}>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center border-2 border-gray-200">
+                                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
                                             <Icon name="Activity" size={20} color="#0f172a" />
                                         </div>
                                         <div>
-                                            <p className="text-xl font-black tracking-tighter text-dark">{(r.distance/1000).toFixed(2)} km</p>
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(r.timestamp).toLocaleDateString()}</p>
+                                            <p className="text-xl font-black tracking-tighter text-slate-900">{(r.distance/1000).toFixed(2)} km</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(r.timestamp).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right text-gray-500 text-[10px] font-black uppercase tracking-widest bg-gray-100 py-2 px-3 rounded-lg">
+                                    <div className="text-right text-slate-600 text-[10px] font-black uppercase tracking-widest bg-slate-100 py-2 px-3 rounded-lg border border-slate-200">
                                         {(r.duration/60).toFixed(0)} MINS
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="py-12 text-center border-2 border-dashed border-gray-300 bg-white rounded-[2rem]">
-                                <Icon name="ZapOff" size={40} color="#9ca3af" className="mx-auto mb-4" />
-                                <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No runs recorded yet</p>
+                            <div className="py-12 text-center border-2 border-dashed border-slate-300 bg-white rounded-[2rem]">
+                                <Icon name="Activity" size={40} color="#94a3b8" className="mx-auto mb-4" />
+                                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No runs recorded yet</p>
                             </div>
                         )}
                     </div>
@@ -444,27 +423,27 @@
             );
 
             const Stats = () => (
-                <div className="h-full bg-f8fafc text-dark px-6 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                <div className="fixed inset-0 bg-slate-100 text-slate-900 px-6 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
                     <header className="mb-10">
-                        <p className="text-xs font-black uppercase tracking-widest text-gray-500">Analytics</p>
-                        <h1 className="text-4xl font-black tracking-tighter text-dark">Your Progress.</h1>
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Analytics</p>
+                        <h1 className="text-4xl font-black tracking-tighter">Your Progress.</h1>
                     </header>
-                    <div className="p-8 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-[2.5rem] mb-8 border-2 border-dark shadow-[6px_8px_0px_#0f172a]">
+                    <div className="p-8 bg-orange-500 text-white rounded-[2.5rem] mb-8 fitness-card">
                         <div className="flex items-center gap-3 mb-6">
                             <Icon name="Flame" size={36} color="white" />
                             <h2 className="text-5xl font-black tracking-tighter">{userData?.streak || 0} <span className="text-2xl opacity-80">Days</span></h2>
                         </div>
                         <p className="font-bold text-orange-100 uppercase tracking-widest text-xs">Current active streak</p>
                     </div>
-                    <div className="p-8 bg-white border-2 border-dark rounded-[2.5rem] shadow-[4px_6px_0px_#0f172a]">
-                        <h3 className="font-black text-xl mb-8 uppercase text-dark">Activity Graph</h3>
+                    <div className="p-8 bg-white rounded-[2.5rem] fitness-card">
+                        <h3 className="font-black text-xl mb-8 uppercase text-slate-900">Activity Graph</h3>
                         <div className="flex justify-between items-end h-40 px-2 gap-3">
                             {[40, 70, 45, 90, 60, 30, 80].map((h, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-3">
-                                    <div className="w-full bg-dark rounded-t-md relative overflow-hidden" style={{ height: `${h}%` }}>
-                                        {i === 3 && <div className="absolute inset-0 bg-volt"></div>}
+                                    <div className="w-full bg-slate-800 rounded-t-md relative overflow-hidden" style={{ height: `${h}%` }}>
+                                        {i === 3 && <div className="absolute inset-0 bg-blue-500"></div>}
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-400">MTWTFSS"[i]</span>
+                                    <span className="text-[10px] font-black text-slate-400">MTWTFSS"[i]</span>
                                 </div>
                             ))}
                         </div>
@@ -474,79 +453,100 @@
 
             const Run = () => {
                 const circ = 2 * Math.PI * 140;
-                // 8. Output precision and stability handled here and in engine validation
                 const offset = circ - (Math.min(100, (distance / 5000) * 100) / 100) * circ;
 
-                // Post-Run Summary
+                // Post-Run Summary (Fixed inset-0 so no jumping occurs)
                 if (lastSummary && !isRunning) {
                     return (
-                        <div className="fixed inset-0 z-[60] bg-white text-dark p-8 flex flex-col justify-between overflow-y-auto custom-scroll animate__animated animate__fadeIn">
-                            <div>
-                                <header className="flex justify-between items-center mb-12">
-                                    <h2 className="text-5xl font-black tracking-tighter text-dark">Session <br/><span className="text-volt drop-shadow-md">Complete.</span></h2>
+                        <div className="fixed inset-0 z-[60] bg-white text-slate-900 p-8 flex flex-col justify-between overflow-hidden animate__animated animate__fadeIn">
+                            <div className="flex-1 overflow-y-auto custom-scroll pb-10">
+                                <header className="flex justify-between items-center mb-12 pt-4">
+                                    <h2 className="text-5xl font-black tracking-tighter">Session <br/><span className="text-blue-600">Complete.</span></h2>
                                 </header>
                                 <div className="grid grid-cols-2 gap-4 mb-8">
-                                    <div className="p-6 bg-dark text-white rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
-                                        <p className="text-[10px] font-black text-volt uppercase mb-2 tracking-widest">Total Distance</p>
+                                    <div className="p-6 bg-slate-900 text-white rounded-[2rem] fitness-card">
+                                        <p className="text-[10px] font-black text-blue-400 uppercase mb-2 tracking-widest">Total Distance</p>
                                         <p className="text-4xl font-black tracking-tighter">{(lastSummary.distance/1000).toFixed(2)}<span className="text-lg">km</span></p>
                                     </div>
-                                    <div className="p-6 bg-white rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Total Time</p>
-                                        <p className="text-4xl font-black tracking-tighter text-dark">{Math.floor(lastSummary.duration/60)}<span className="text-lg">m</span></p>
+                                    <div className="p-6 bg-blue-50 rounded-[2rem] fitness-card">
+                                        <p className="text-[10px] font-black text-blue-600 uppercase mb-2 tracking-widest">Total Time</p>
+                                        <p className="text-4xl font-black tracking-tighter text-blue-900">{formatTime(lastSummary.duration)}</p>
                                     </div>
                                 </div>
-                                <div className="p-8 bg-white border-2 border-dark rounded-[2.5rem] mb-6 shadow-[4px_6px_0px_#0f172a]">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Calories Burned</p>
-                                    <p className="text-4xl font-black text-dark">~{Math.floor((lastSummary.distance/1000) * 75 * 1.036)} <span className="text-lg">kcal</span></p>
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="p-6 bg-white rounded-[2.5rem] fitness-card">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Avg Pace</p>
+                                        <p className="text-2xl font-black text-slate-900">{formatPace(lastSummary.duration, lastSummary.distance)}<span className="text-xs">/km</span></p>
+                                    </div>
+                                    <div className="p-6 bg-white rounded-[2.5rem] fitness-card">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Calories</p>
+                                        <p className="text-2xl font-black text-slate-900">~{Math.floor((lastSummary.distance/1000) * 75 * 1.036)}<span className="text-xs">kcal</span></p>
+                                    </div>
                                 </div>
                             </div>
-                            <button onClick={() => setView('home')} className="w-full py-6 bg-volt text-dark rounded-[2rem] font-black text-xl border-2 border-dark shadow-[4px_6px_0px_#0f172a] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest">RETURN HOME</button>
+                            <div className="pb-8 pt-4">
+                                <button onClick={() => setView('home')} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-xl fitness-card uppercase tracking-widest">RETURN HOME</button>
+                            </div>
                         </div>
                     );
                 }
 
-                // Active Running Screen
+                // Active Running Screen (Fixed layout prevents ANY jumping)
                 return (
-                    <div className="fixed inset-0 z-[60] bg-dark text-white p-8 flex flex-col justify-between animate__animated animate__slideInUp">
-                        <header className="flex justify-between items-center z-10">
-                            <button onClick={() => !isRunning && setView('home')} className="text-gray-400 font-bold text-xs uppercase hover:text-white transition-colors">{!isRunning ? "Cancel" : ""}</button>
-                            <div className="flex items-center gap-3 bg-slate-800 px-5 py-2.5 rounded-full border border-slate-700">
-                                <div className={`w-3 h-3 rounded-full ${autoPaused ? 'bg-orange-500' : (isRunning && !isPaused ? 'bg-volt animate-pulse' : 'bg-orange-500')}`} />
+                    <div className="fixed inset-0 z-[60] bg-slate-900 text-white flex flex-col justify-between animate__animated animate__slideInUp overflow-hidden overscroll-none">
+                        
+                        {/* High-Tech Grid Background */}
+                        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#334155 1.5px, transparent 1.5px)', backgroundSize: '24px 24px', opacity: 0.3 }}></div>
+
+                        <header className="relative flex justify-between items-center z-10 p-8 pb-0 pt-12">
+                            <button onClick={() => !isRunning && setView('home')} className="text-slate-400 font-bold text-xs uppercase hover:text-white transition-colors">{!isRunning ? "Cancel" : ""}</button>
+                            <div className="flex items-center gap-3 bg-slate-800 px-5 py-2.5 rounded-full border-2 border-slate-700">
+                                <div className={`w-3 h-3 rounded-full ${autoPaused ? 'bg-orange-500' : (isRunning && !isPaused ? 'bg-green-500 animate-pulse' : 'bg-orange-500')}`} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">{autoPaused ? "AUTO-PAUSED" : (isRunning ? "RECORDING" : "READY")}</span>
                             </div>
-                            <div className="text-[10px] font-black text-gray-500 uppercase">{accuracy > 0 ? `GPS: ${accuracy.toFixed(0)}m` : '...'}</div>
+                            <div className="text-[10px] font-black text-slate-500 uppercase">{accuracy > 0 && accuracy <= 20 ? `GPS: OK` : (accuracy > 20 ? `GPS: POOR` : '...')}</div>
                         </header>
                         
-                        <div className="relative flex-1 flex flex-col items-center justify-center">
-                            <svg className="absolute w-[360px] h-[360px] -rotate-90 pointer-events-none">
-                                <circle cx="180" cy="180" r="140" stroke="#1e293b" strokeWidth="8" fill="transparent" />
-                                <circle cx="180" cy="180" r="140" stroke="#ccff00" strokeWidth="12" fill="transparent" strokeDasharray={circ} style={{ strokeDashoffset: offset }} strokeLinecap="round" className="progress-ring-circle drop-shadow-[0_0_15px_rgba(204,255,0,0.5)]" />
-                            </svg>
-                            <div className="z-10 text-center animate__animated animate__zoomIn">
-                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Distance</p>
-                                <h1 className="text-[110px] font-black leading-none tracking-tighter tabular-nums text-white text-glow">{(distance / 1000).toFixed(2)}</h1>
-                                <p className="text-xl font-bold text-volt uppercase tracking-widest mt-2">Kilometers</p>
+                        <div className="relative flex-1 flex flex-col items-center justify-center w-full px-4">
+                            {/* Animated Distance Ring */}
+                            <div className="relative flex items-center justify-center mb-8">
+                                <svg className="absolute w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] -rotate-90 pointer-events-none">
+                                    <circle cx="50%" cy="50%" r="130" stroke="#1e293b" strokeWidth="8" fill="transparent" />
+                                    <circle cx="50%" cy="50%" r="130" stroke="#3b82f6" strokeWidth="12" fill="transparent" strokeDasharray={circ} style={{ strokeDashoffset: offset }} strokeLinecap="round" className="progress-ring-circle drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                                </svg>
+                                <div className="z-10 text-center animate__animated animate__zoomIn">
+                                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mb-2">Distance</p>
+                                    <h1 className="text-[80px] sm:text-[100px] font-black leading-none tracking-tighter tabular-nums text-white">{(distance / 1000).toFixed(2)}</h1>
+                                    <p className="text-lg font-bold text-blue-400 uppercase tracking-widest mt-1">Kilometers</p>
+                                </div>
+                            </div>
+
+                            {/* Live Stats Cards (Time & Pace & Speed) */}
+                            <div className="grid grid-cols-3 gap-3 w-full max-w-md z-10 mt-4 px-2">
+                                <div className="bg-slate-800/80 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center">
+                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Time</p>
+                                    <p className="text-xl font-black text-white tabular-nums">{formatTime(elapsed)}</p>
+                                </div>
+                                <div className="bg-slate-800/80 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center">
+                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Pace</p>
+                                    <p className="text-xl font-black text-white tabular-nums">{formatPace(elapsed, distance)}</p>
+                                </div>
+                                <div className="bg-slate-800/80 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center">
+                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Speed</p>
+                                    <p className="text-xl font-black text-white tabular-nums">{currentSpeed > 0 ? currentSpeed.toFixed(1) : "0.0"}</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="w-full flex justify-center items-center gap-8 mb-10 z-20">
+                        <div className="relative w-full flex justify-center items-center gap-8 p-8 pb-12 z-20">
                             {!isRunning ? (
-                                <button onClick={startRun} className="w-32 h-32 bg-volt text-dark rounded-full flex items-center justify-center border-4 border-dark shadow-[0_15px_40px_rgba(204,255,0,0.3)] active:scale-95 transition-transform"><Icon name="Play" size={48} color="#0f172a" /></button>
+                                <button onClick={startRun} className="w-24 h-24 bg-blue-600 text-white rounded-full flex items-center justify-center fitness-card active:scale-95 transition-transform"><Icon name="Play" size={40} color="white" /></button>
                             ) : (
                                 <>
-                                    <button onClick={() => {
-                                        if (!isPaused) {
-                                            setIsPaused(true);
-                                            gpsEngineRef.current.pause(); // Reset Engine Buffer
-                                            clearTimeout(autoPauseTimeoutRef.current);
-                                        } else {
-                                            setIsPaused(false);
-                                            setAutoPaused(false);
-                                        }
-                                    }} className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-600 active:scale-95 transition-all">
-                                        {isPaused ? <Icon name="Play" size={32} color="white"/> : <Icon name="Pause" size={32} color="white"/>}
+                                    <button onClick={togglePause} className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-600 active:scale-95 transition-all">
+                                        {isPaused ? <Icon name="Play" size={24} color="white"/> : <Icon name="Pause" size={24} color="white"/>}
                                     </button>
-                                    <button onClick={stopRun} className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center border-4 border-dark shadow-[0_15px_40px_rgba(239,68,68,0.3)] active:scale-95 transition-transform"><Icon name="Square" size={40} color="#0f172a" /></button>
+                                    <button onClick={stopRun} className="w-24 h-24 bg-red-500 text-white rounded-full flex items-center justify-center fitness-card active:scale-95 transition-transform"><Icon name="Square" size={36} color="white" /></button>
                                 </>
                             )}
                         </div>
@@ -555,45 +555,60 @@
             };
 
             const Profile = () => (
-                <div className="h-full bg-gray-50 text-dark px-8 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                <div className="fixed inset-0 bg-slate-100 text-slate-900 px-8 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
                     <div className="flex flex-col items-center mb-10">
                         {/* Profile Picture Upload Container */}
-                        <label className="relative block w-36 h-36 rounded-[2.5rem] bg-white border-4 border-dark flex items-center justify-center mb-6 shadow-[6px_8px_0px_#0f172a] cursor-pointer overflow-hidden profile-pic-container">
+                        <label className="relative block w-36 h-36 rounded-[2.5rem] bg-white flex items-center justify-center mb-6 fitness-card cursor-pointer overflow-hidden profile-pic-container">
                             {userData?.profilePic ? (
                                 <img src={userData.profilePic} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
                                 <Icon name="User" size={60} color="#cbd5e1" />
                             )}
-                            <div className="absolute inset-0 bg-dark/60 flex items-center justify-center upload-overlay">
+                            <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center upload-overlay">
                                 <Icon name="Camera" size={32} color="white" />
                             </div>
                             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                         </label>
 
-                        <h2 className="text-4xl font-black tracking-tighter text-dark mb-1 uppercase">{userData?.name || 'Athlete'}</h2>
-                        <div className="bg-dark text-volt px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest mt-2">Elite Status</div>
+                        <h2 className="text-4xl font-black tracking-tighter text-slate-900 mb-1 uppercase">{userData?.name || 'Athlete'}</h2>
+                        <div className="bg-slate-900 text-blue-400 px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest mt-2 border border-slate-700">Premium Account</div>
                     </div>
                     
                     <div className="space-y-5">
-                        <div onClick={() => setView('privacy')} className="p-8 bg-white border-2 border-dark rounded-[2rem] flex justify-between items-center cursor-pointer shadow-[4px_6px_0px_#0f172a] active:translate-y-1 active:shadow-[2px_3px_0px_#0f172a] transition-all">
+                        {/* Distinct Colored Cards so nothing is hidden */}
+                        <div onClick={() => setView('privacy')} className="p-8 bg-blue-600 text-white rounded-[2rem] flex justify-between items-center cursor-pointer fitness-card">
                             <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 bg-dark rounded-xl flex items-center justify-center">
-                                    <Icon name="Shield" size={24} color="#ccff00" />
+                                <div className="w-12 h-12 bg-blue-800 rounded-xl flex items-center justify-center border border-blue-500">
+                                    <Icon name="Shield" size={24} color="white" />
                                 </div>
                                 <div>
-                                    <p className="font-black text-lg uppercase text-dark">Data Policy</p>
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Privacy Controls</p>
+                                    <p className="font-black text-lg uppercase">Data Policy</p>
+                                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Privacy Controls</p>
                                 </div>
                             </div>
-                            <Icon name="ChevronRight" size={24} color="#0f172a" />
+                            <Icon name="ChevronRight" size={24} color="white" />
                         </div>
-
-                        <div className="p-8 bg-white border-2 border-gray-300 rounded-[2rem] flex justify-between items-center opacity-70">
+                        
+                        {/* Submit Complaint / Support Button */}
+                        <a href="mailto:farmanshafi2007@gmail.com?subject=Runo Elite Support Request" className="p-8 bg-red-500 text-white rounded-[2rem] flex justify-between items-center cursor-pointer fitness-card block no-underline">
                             <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                                    <Icon name="Settings" size={24} color="#64748b" />
+                                <div className="w-12 h-12 bg-red-700 rounded-xl flex items-center justify-center border border-red-400">
+                                    <Icon name="MessageSquare" size={24} color="white" />
                                 </div>
-                                <p className="font-black text-lg text-gray-600 uppercase">Settings</p>
+                                <div>
+                                    <p className="font-black text-lg uppercase">Support</p>
+                                    <p className="text-[10px] font-bold text-red-200 uppercase tracking-widest">Submit a Complaint</p>
+                                </div>
+                            </div>
+                            <Icon name="ChevronRight" size={24} color="white" />
+                        </a>
+
+                        <div className="p-8 bg-white border-2 border-slate-300 rounded-[2rem] flex justify-between items-center opacity-80">
+                            <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200">
+                                    <Icon name="Settings" size={24} color="#475569" />
+                                </div>
+                                <p className="font-black text-lg text-slate-700 uppercase">Settings</p>
                             </div>
                             <Icon name="Lock" size={20} color="#94a3b8" />
                         </div>
@@ -602,28 +617,28 @@
             );
 
             const Privacy = () => (
-                <div className="fixed inset-0 z-[100] bg-dark text-white flex flex-col animate__animated animate__slideInRight">
-                    <header className="px-8 pt-16 pb-8 border-b border-slate-800 bg-dark flex items-center justify-between sticky top-0 z-10">
+                <div className="fixed inset-0 z-[100] bg-slate-900 text-white flex flex-col animate__animated animate__slideInRight">
+                    <header className="px-8 pt-16 pb-8 border-b border-slate-800 bg-slate-900 flex items-center justify-between sticky top-0 z-10">
                         <button onClick={() => setView('profile')} className="p-4 bg-slate-800 rounded-2xl active:scale-95 transition-transform"><Icon name="ChevronLeft" size={24} color="white"/></button>
-                        <h2 className="text-xl font-black tracking-tighter uppercase text-volt">Privacy</h2>
+                        <h2 className="text-xl font-black tracking-tighter uppercase text-blue-400">Privacy</h2>
                         <div className="w-14"></div>
                     </header>
-                    <div className="flex-1 overflow-y-auto p-10 custom-scroll space-y-10">
+                    <div className="flex-1 overflow-y-auto p-10 custom-scroll space-y-10 pb-[100px]">
                         <h3 className="text-4xl font-black tracking-tighter leading-tight">Data Handling Protocol.</h3>
                         
                         <div className="space-y-4">
-                            <h4 className="font-black text-lg text-volt uppercase tracking-widest">01. Telemetry</h4>
-                            <p className="text-gray-400 leading-relaxed text-sm font-medium">We collect fitness telemetry (GPS paths) only while a run is actively recording. This data is kept strictly local to your device.</p>
+                            <h4 className="font-black text-lg text-blue-400 uppercase tracking-widest">01. Telemetry</h4>
+                            <p className="text-slate-400 leading-relaxed text-sm font-medium">We collect fitness telemetry (GPS paths) only while a run is actively recording. This data is kept strictly local to your device.</p>
                         </div>
                         
                         <div className="space-y-4">
-                            <h4 className="font-black text-lg text-volt uppercase tracking-widest">02. Analytics</h4>
-                            <p className="text-gray-400 leading-relaxed text-sm font-medium">Your workout history and profile image are securely stored locally in your browser storage to provide you with lifetime stats and streak tracking.</p>
+                            <h4 className="font-black text-lg text-blue-400 uppercase tracking-widest">02. Analytics</h4>
+                            <p className="text-slate-400 leading-relaxed text-sm font-medium">Your workout history and profile image are securely stored locally in your browser storage to provide you with lifetime stats and streak tracking.</p>
                         </div>
 
                         <div className="space-y-4">
-                            <h4 className="font-black text-lg text-volt uppercase tracking-widest">03. Support</h4>
-                            <p className="text-gray-400 leading-relaxed text-sm font-medium">If you need your data cleared, simply clear your browser data or reinstall the app. Contact protocol: farmanshafi2007@gmail.com.</p>
+                            <h4 className="font-black text-lg text-blue-400 uppercase tracking-widest">03. Support</h4>
+                            <p className="text-slate-400 leading-relaxed text-sm font-medium">If you need your data cleared, simply clear your browser data or reinstall the app. Contact protocol: farmanshafi2007@gmail.com.</p>
                         </div>
                         
                         <div className="h-32" />
@@ -631,15 +646,15 @@
                 </div>
             );
 
-            // Nav Configuration for the Box Design
+            // Nav Configuration for the Box Design (Ensuring Visible Icons)
             const navItems = [
-                { id: 'home', icon: 'Home', label: 'HOME' },
-                { id: 'stats', icon: 'BarChart2', label: 'STATS' },
-                { id: 'profile', icon: 'User', label: 'PROFILE' }
+                { id: 'home', icon: 'HomeSolid', label: 'HOME', activeColor: '#2563eb' }, 
+                { id: 'stats', icon: 'BarChart2', label: 'STATS', activeColor: '#9333ea' }, 
+                { id: 'profile', icon: 'User', label: 'PROFILE', activeColor: '#ea580c' } 
             ];
 
             return (
-                <div className="h-[100dvh] w-full bg-gray-50 relative overflow-hidden selection:bg-volt selection:text-dark">
+                <div className="fixed inset-0 bg-slate-100 relative overflow-hidden">
                     {view === 'splash' && <Splash />}
                     {view === 'home' && <Home />}
                     {view === 'stats' && <Stats />}
@@ -651,17 +666,18 @@
                     {/* FIXED BOTTOM NAVIGATION - Distinct Small Boxes with Black Borders */}
                     {['home', 'profile', 'stats'].includes(view) && (
                         <div className="fixed bottom-0 inset-x-0 w-full nav-dock-container z-50 flex justify-center pointer-events-none">
-                            <nav className="bg-white border-2 border-dark rounded-[2rem] shadow-[0_8px_30px_rgba(0,0,0,0.15)] px-3 py-2 flex items-center gap-2 pointer-events-auto mx-4 mb-4">
+                            <nav className="bg-white border-2 border-slate-900 rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.15)] px-3 py-2 flex items-center gap-2 pointer-events-auto mx-4 mb-4">
                                 {navItems.map((item) => {
                                     const isActive = view === item.id;
                                     return (
                                         <button 
                                             key={item.id}
                                             onClick={() => setView(item.id)} 
-                                            className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-[1.2rem] nav-item-box ${isActive ? 'active' : 'text-gray-400 hover:bg-gray-100'}`}
+                                            className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-[1.2rem] nav-item-box ${isActive ? 'active' : 'hover:bg-slate-50'}`}
+                                            style={isActive ? { backgroundColor: item.activeColor, borderColor: '#0f172a' } : { borderColor: 'transparent' }}
                                         >
-                                            <Icon name={item.icon} size={22} color={isActive ? '#0f172a' : 'currentColor'} />
-                                            <span className={`text-[9px] font-black mt-1 ${isActive ? 'text-dark' : 'text-gray-400'}`}>{item.label}</span>
+                                            <Icon name={item.icon} size={24} color={isActive ? 'white' : '#64748b'} />
+                                            <span className={`text-[9px] font-black mt-1 ${isActive ? 'text-white' : 'text-slate-500'}`}>{item.label}</span>
                                         </button>
                                     );
                                 })}
