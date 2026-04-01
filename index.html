@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Runo Elite | High-Performance Fitness</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Runo Fitness | Elite Performance</title>
     <!-- Core Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,16 +13,32 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        volt: '#ccff00', // High-energy fitness green
+                        dark: '#0f172a'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;600;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #000;
-            color: #fff;
+            background-color: #f8fafc; /* Crisp light background */
             margin: 0;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
+            overscroll-behavior: none;
         }
 
         .custom-scroll {
@@ -32,14 +48,39 @@
         }
         .custom-scroll::-webkit-scrollbar { display: none; }
 
-        .noir-glow { box-shadow: 0 0 60px rgba(255, 255, 255, 0.06); }
-        .text-glow { text-shadow: 0 0 25px rgba(255, 255, 255, 0.3); }
+        /* High-Energy UI Elements */
+        .fitness-card {
+            border: 2px solid #0f172a;
+            box-shadow: 4px 6px 0px #0f172a;
+            transition: all 0.2s ease;
+        }
 
-        .nav-dock {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        .fitness-card:active {
+            transform: translate(2px, 3px);
+            box-shadow: 2px 3px 0px #0f172a;
+        }
+
+        /* Premium Navigation Dock */
+        .nav-dock-container {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        /* Visible Box Navigation Buttons */
+        .nav-item-box {
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+        }
+
+        .nav-item-box.active {
+            background-color: #ccff00; /* Volt green */
+            border: 2px solid #0f172a; /* Clear black border */
+            box-shadow: 0px 4px 0px #0f172a;
+            transform: translateY(-4px);
+        }
+        
+        .nav-item-box.active:active {
+            transform: translateY(0px);
+            box-shadow: 0px 0px 0px #0f172a;
         }
 
         .progress-ring-circle {
@@ -48,83 +89,48 @@
             transform-origin: 50% 50%;
         }
 
-        .ai-card {
-            background: linear-gradient(145deg, #0a0a0a 0%, #000000 100%);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        .upload-overlay {
+            opacity: 0;
+            transition: opacity 0.3s;
         }
-
-        .btn-elite:active { transform: scale(0.96); }
-
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
+        .profile-pic-container:hover .upload-overlay {
+            opacity: 1;
         }
-        .animate-pulse-glow { animation: pulse-glow 3s infinite; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+        const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- GEMINI API INTEGRATION ---
-        const apiKey = ""; 
-        const callGemini = async (prompt, systemPrompt = "You are Runo Elite AI, a high-performance fitness coach. Keep responses short, tactical, and motivational.") => {
-            let retries = 0;
-            while (retries < 3) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] }
-                        })
-                    });
-                    if (!response.ok) throw new Error('API Error');
-                    const data = await response.json();
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
-                } catch (e) {
-                    retries++;
-                    await new Promise(r => setTimeout(r, 1000));
-                }
-            }
-        };
-
-        // Ultra-Defensive Icon Component
-        const Icon = ({ name, size = 24, className = "" }) => {
-            const ref = useRef(null);
+        // --- ROBUST ICON COMPONENT ---
+        const Icon = ({ name, size = 24, className = "", color = "currentColor" }) => {
+            const [svgHtml, setSvgHtml] = useState('');
+            
             useEffect(() => {
-                if (window.lucide && ref.current) {
+                if (window.lucide && window.lucide.icons[name]) {
                     try {
                         const iconData = window.lucide.icons[name];
-                        if (iconData && Array.isArray(iconData[1])) {
-                            ref.current.innerHTML = '';
-                            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                            svg.setAttribute("width", size);
-                            svg.setAttribute("height", size);
-                            svg.setAttribute("viewBox", "0 0 24 24");
-                            svg.setAttribute("fill", "none");
-                            svg.setAttribute("stroke", "currentColor");
-                            svg.setAttribute("stroke-width", "2");
-                            svg.setAttribute("stroke-linecap", "round");
-                            svg.setAttribute("stroke-linejoin", "round");
-                            svg.classList.add(...className.split(' ').filter(Boolean));
-                            iconData[1].forEach(tag => {
-                                const el = document.createElementNS("http://www.w3.org/2000/svg", tag[0]);
-                                Object.entries(tag[1]).forEach(([k, v]) => el.setAttribute(k, v));
-                                svg.appendChild(el);
-                            });
-                            ref.current.appendChild(svg);
-                        }
-                    } catch (err) {}
+                        const childrenHtml = iconData[1].map(child => {
+                            const tag = child[0];
+                            const attrs = Object.entries(child[1]).map(([k, v]) => `${k}="${v}"`).join(' ');
+                            return `<${tag} ${attrs}></${tag}>`;
+                        }).join('');
+                        
+                        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}">${childrenHtml}</svg>`;
+                        setSvgHtml(svg);
+                    } catch (e) {
+                        console.error("Icon Error:", e);
+                    }
                 }
-            }, [name, size, className]);
-            return <span ref={ref} className="inline-flex items-center justify-center" />;
+            }, [name, size, className, color]);
+
+            if (!svgHtml) return <span style={{width: size, height: size, display: 'inline-block'}} />;
+            return <span className="inline-flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgHtml }} />;
         };
 
-        // Sensor Fusion Engine
+        // --- SENSOR FUSION ENGINE ---
         class KalmanFilter {
             constructor(q = 0.00001, r = 0.001, p = 1) {
                 this.q = q; this.r = r; this.p = p; this.x = 0;
@@ -152,21 +158,12 @@
             const [userData, setUserData] = useState(null);
             const [runs, setRuns] = useState([]);
             
-            // State
-            const [aiBriefing, setAiBriefing] = useState(null);
-            const [isBriefingLoading, setIsBriefingLoading] = useState(false);
-            const [aiWorkout, setAiWorkout] = useState(null);
-            const [isWorkoutLoading, setIsWorkoutLoading] = useState(false);
-            const [aiAnalysis, setAiAnalysis] = useState(null);
-            const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
-
-            // Tracking
+            // Tracking State
             const [isRunning, setIsRunning] = useState(false);
             const [isPaused, setIsPaused] = useState(false);
             const [elapsed, setElapsed] = useState(0);
             const [distance, setDistance] = useState(0);
             const [route, setRoute] = useState([]);
-            const [accuracy, setAccuracy] = useState(0);
             const [lastSummary, setLastSummary] = useState(null);
 
             const timerRef = useRef(null);
@@ -175,22 +172,42 @@
             const latK = useRef(new KalmanFilter());
             const lngK = useRef(new KalmanFilter());
 
+            // Handle App Startup
             useEffect(() => {
                 const timer = setTimeout(() => {
-                    if (!userData) setView('onboarding');
-                    else setView('home');
+                    const saved = localStorage.getItem('runo_user');
+                    if (saved) {
+                        setUserData(JSON.parse(saved));
+                        setView('home');
+                    } else {
+                        setView('onboarding');
+                    }
                 }, 2000);
                 return () => clearTimeout(timer);
-            }, [userData]);
+            }, []);
 
+            // Handle Profile Image Upload
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const updatedUser = { ...userData, profilePic: reader.result };
+                        setUserData(updatedUser);
+                        localStorage.setItem('runo_user', JSON.stringify(updatedUser));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // Start GPS Tracking
             const startRun = () => {
                 setIsRunning(true); setIsPaused(false); setLastSummary(null);
                 timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
                 if (navigator.geolocation) {
                     watchRef.current = navigator.geolocation.watchPosition((p) => {
-                        const { latitude, longitude, accuracy: acc } = p.coords;
-                        setAccuracy(acc);
-                        if (acc > 30) return;
+                        const { latitude, longitude, accuracy } = p.coords;
+                        if (accuracy > 30) return;
                         const fLat = latK.current.filter(latitude);
                         const fLng = lngK.current.filter(longitude);
                         if (lastPosRef.current) {
@@ -205,212 +222,217 @@
                 }
             };
 
+            // Stop GPS Tracking
             const stopRun = () => {
                 clearInterval(timerRef.current);
                 if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
                 const summary = { id: Date.now(), timestamp: Date.now(), duration: elapsed, distance, pace: distance > 10 ? elapsed / (distance/1000) : 0 };
                 setLastSummary(summary);
+                
                 if (distance > 10) {
                     setRuns(prev => [summary, ...prev]);
-                    setUserData(prev => ({ ...prev, streak: prev.streak + 1, totalKm: prev.totalKm + (distance/1000) }));
+                    const updatedUser = { ...userData, streak: (userData?.streak || 0) + 1, totalKm: (userData?.totalKm || 0) + (distance/1000) };
+                    setUserData(updatedUser);
+                    localStorage.setItem('runo_user', JSON.stringify(updatedUser));
                 }
                 setIsRunning(false);
             };
 
-            // AI Logic
-            const fetchBriefing = async () => {
-                setIsBriefingLoading(true);
-                const res = await callGemini(`User streak: ${userData.streak}, Total: ${userData.totalKm.toFixed(1)}km. Generate a 2-sentence elite morning briefing.`);
-                setAiBriefing(res || "Focus on consistency today. Your momentum is your greatest asset.");
-                setIsBriefingLoading(false);
-            };
-
-            const fetchWorkout = async (v) => {
-                setIsWorkoutLoading(true);
-                const res = await callGemini(`Feeling: ${v}. Generate a 10-minute circuit with 4 bodyweight exercises.`);
-                setAiWorkout(res || "1. Jump Squats\n2. Narrow Pushups\n3. Mountain Climbers\n4. High Plank");
-                setIsWorkoutLoading(false);
-            };
-
-            const fetchAnalysis = async () => {
-                setIsAnalysisLoading(true);
-                const res = await callGemini(`Analyze run: ${(distance/1000).toFixed(2)}km in ${Math.floor(elapsed/60)}m. Provide 1 tactical insight.`);
-                setAiAnalysis(res || "Session validated. Prioritize myofascial release for recovery.");
-                setIsAnalysisLoading(false);
-            };
-
-            // --- Sub-Views ---
+            // --- SCREENS ---
 
             const Splash = () => (
-                <div className="h-screen bg-black flex flex-col items-center justify-center animate__animated animate__fadeIn">
-                    <div className="w-20 h-20 bg-white rounded-[2rem] rotate-45 flex items-center justify-center animate__animated animate__zoomIn">
-                        <Icon name="Navigation" size={40} className="text-black -rotate-45" />
+                <div className="h-[100dvh] bg-dark flex flex-col items-center justify-center animate__animated animate__fadeIn">
+                    <div className="w-28 h-28 bg-volt rounded-[2rem] rotate-45 flex items-center justify-center shadow-[0_0_50px_rgba(204,255,0,0.4)] animate__animated animate__zoomIn">
+                        <Icon name="Activity" size={56} color="#0f172a" className="-rotate-45" />
                     </div>
-                    <h1 className="text-white mt-12 font-black tracking-[0.6em] uppercase text-[10px]">Runo Elite</h1>
+                    <h1 className="text-white mt-12 font-black tracking-[0.5em] uppercase text-2xl drop-shadow-md">RUNO</h1>
+                    <p className="text-volt mt-2 text-[10px] font-bold tracking-widest uppercase">Energy & Focus</p>
                 </div>
             );
 
             const Onboarding = () => (
-                <div className="h-screen bg-black text-white p-12 flex flex-col justify-center items-center text-center">
-                    <h1 className="text-7xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp">Elite.</h1>
-                    <p className="text-neutral-500 mb-20 uppercase tracking-[0.4em] text-[10px] font-bold">Precision Habit Protocol</p>
-                    <button onClick={() => { setUserData({ name: "Athlete", streak: 0, totalKm: 0, shields: 1, joined: Date.now() }); setView('home'); }} className="w-full py-7 bg-white text-black rounded-[2.5rem] font-black text-xl active:scale-95 transition-all shadow-2xl">ESTABLISH</button>
+                <div className="h-[100dvh] bg-dark text-white p-8 flex flex-col justify-center items-center text-center">
+                    <div className="w-24 h-24 bg-volt rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(204,255,0,0.5)]">
+                        <Icon name="Zap" size={48} color="#0f172a" />
+                    </div>
+                    <h1 className="text-6xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp">Welcome.</h1>
+                    <p className="text-gray-400 mb-20 uppercase tracking-widest text-xs font-bold leading-relaxed">Unleash your potential.<br/>Your fitness journey starts now.</p>
+                    
+                    <button 
+                        onClick={() => { 
+                            const newUser = { name: "Athlete", streak: 0, totalKm: 0, shields: 1, joined: Date.now(), profilePic: null };
+                            setUserData(newUser); 
+                            localStorage.setItem('runo_user', JSON.stringify(newUser));
+                            setView('home'); 
+                        }} 
+                        className="w-full py-6 bg-volt text-dark rounded-[2rem] font-black text-xl fitness-card"
+                    >
+                        GET STARTED
+                    </button>
                 </div>
             );
 
             const Home = () => (
-                <div className="h-full bg-white text-black px-6 pt-16 pb-32 overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                <div className="h-full px-6 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
                     <header className="flex justify-between items-center mb-10">
-                        <div><p className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-400">Elite Command</p><h1 className="text-4xl font-black tracking-tighter">Own the Day.</h1></div>
-                        <div className="bg-black text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-xl">
-                            <Icon name="Flame" size={18} className="text-orange-500 fill-orange-500" />{userData?.streak || 0}
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-widest text-gray-500">Runo Fitness</p>
+                            <h1 className="text-4xl font-black tracking-tighter text-dark">Get After It.</h1>
+                        </div>
+                        <div className="bg-white px-5 py-2.5 rounded-[1.2rem] font-bold flex items-center gap-2 border-2 border-dark shadow-[2px_3px_0px_#0f172a] text-dark">
+                            <Icon name="Flame" size={20} color="#ea580c" /> {userData?.streak || 0}
                         </div>
                     </header>
 
-                    <div className="mb-8 p-8 ai-card rounded-[3rem] border border-neutral-100 shadow-2xl">
-                        <div className="flex justify-between items-center mb-5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">✨ AI Briefing</p>
-                            <button onClick={fetchBriefing} disabled={isBriefingLoading} className="p-2 bg-neutral-900 rounded-full">{isBriefingLoading ? <Icon name="Loader2" className="animate-spin text-white" size={12}/> : <Icon name="RefreshCcw" size={12} className="text-white"/>}</button>
-                        </div>
-                        {aiBriefing ? <p className="text-sm font-medium leading-relaxed text-white animate__animated animate__fadeIn">{aiBriefing}</p> : <p className="text-sm text-neutral-500 italic">Generate your daily tactical briefing.</p>}
-                    </div>
-
-                    <div className="relative bg-black rounded-[3.5rem] p-10 text-white mb-10 overflow-hidden shadow-2xl border border-white/5 noir-glow">
+                    {/* High Energy Target Card */}
+                    <div className="relative bg-dark rounded-[2.5rem] p-8 text-white mb-10 border-2 border-dark shadow-[6px_8px_0px_#0f172a] overflow-hidden">
                         <div className="relative z-10">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-3">Today's Objective</p>
-                            <h2 className="text-6xl font-black tracking-tighter mb-10">2.5 <span className="text-xl text-neutral-600 font-medium">KM</span></h2>
-                            <button onClick={() => { setDistance(0); setElapsed(0); setLastSummary(null); setView('run'); }} className="w-full py-6 bg-white text-black rounded-[2rem] font-black text-lg btn-elite">START RUN</button>
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-3 h-3 bg-volt rounded-full animate-pulse"></div>
+                                <p className="text-xs font-black uppercase tracking-widest text-gray-300">Today's Mission</p>
+                            </div>
+                            <h2 className="text-7xl font-black tracking-tighter mb-8 text-volt">2.5 <span className="text-3xl font-bold text-white">KM</span></h2>
+                            <button onClick={() => { setDistance(0); setElapsed(0); setLastSummary(null); setView('run'); }} className="w-full py-5 bg-white text-dark rounded-xl font-black text-lg fitness-card uppercase tracking-wide">
+                                IGNITE RUN
+                            </button>
                         </div>
-                        <Icon name="Activity" size={340} className="absolute right-[-100px] bottom-[-100px] opacity-10 pointer-events-none" />
+                        <Icon name="Target" size={250} color="rgba(255,255,255,0.05)" className="absolute -right-10 -bottom-10 pointer-events-none" />
                     </div>
 
-                    <h3 className="font-black text-xs uppercase tracking-widest text-neutral-300 mb-6 px-2">Recent Session</h3>
-                    {runs.length > 0 ? (
-                        <div className="p-7 bg-neutral-50 rounded-[2.5rem] flex items-center justify-between border border-neutral-100">
-                            <div className="flex items-center gap-5">
-                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm"><Icon name="Navigation" size={24} /></div>
-                                <div><p className="text-2xl font-black tracking-tighter">{(runs[0].distance/1000).toFixed(2)} km</p><p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Validated</p></div>
-                            </div>
-                            <div className="text-right text-neutral-400 text-[10px] font-black uppercase">{(runs[0].duration/60).toFixed(0)} MINS</div>
+                    <div className="grid grid-cols-2 gap-4 mb-10">
+                        <div className="p-6 bg-white rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
+                            <Icon name="TrendingUp" size={32} color="#0f172a" className="mb-4" />
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Distance</p>
+                            <p className="text-3xl font-black tracking-tighter text-dark">{(userData?.totalKm || 0).toFixed(1)} <span className="text-sm">KM</span></p>
                         </div>
-                    ) : <div className="py-12 text-center border-2 border-dashed border-neutral-100 rounded-[3rem] text-neutral-300 text-[10px] font-bold uppercase">No data synced</div>}
+                        <div className="p-6 bg-volt rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
+                            <Icon name="Shield" size={32} color="#0f172a" className="mb-4" />
+                            <p className="text-[10px] font-black text-dark uppercase tracking-widest mb-1">Streak Shields</p>
+                            <p className="text-3xl font-black tracking-tighter text-dark">{userData?.shields || 1}</p>
+                        </div>
+                    </div>
+
+                    <h3 className="font-black text-xl tracking-tight mb-6 px-2 text-dark uppercase">Recent Activity</h3>
+                    <div className="space-y-4">
+                        {runs.length > 0 ? (
+                            runs.slice(0,3).map((r, i) => (
+                                <div key={r.id} className="p-5 bg-white rounded-2xl flex items-center justify-between border-2 border-gray-200 animate__animated animate__fadeInUp" style={{animationDelay: `${i*0.1}s`}}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center border-2 border-gray-200">
+                                            <Icon name="Activity" size={20} color="#0f172a" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xl font-black tracking-tighter text-dark">{(r.distance/1000).toFixed(2)} km</p>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(r.timestamp).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right text-gray-500 text-[10px] font-black uppercase tracking-widest bg-gray-100 py-2 px-3 rounded-lg">
+                                        {(r.duration/60).toFixed(0)} MINS
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="py-12 text-center border-2 border-dashed border-gray-300 bg-white rounded-[2rem]">
+                                <Icon name="ZapOff" size={40} color="#9ca3af" className="mx-auto mb-4" />
+                                <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No runs recorded yet</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
 
             const Stats = () => (
-                <div className="h-full bg-white text-black px-6 pt-16 pb-32 overflow-y-auto custom-scroll animate__animated animate__fadeIn">
-                    <header className="mb-12">
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-400">Activity Analytics</p>
-                        <h1 className="text-4xl font-black tracking-tighter">Metrics.</h1>
+                <div className="h-full bg-f8fafc text-dark px-6 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                    <header className="mb-10">
+                        <p className="text-xs font-black uppercase tracking-widest text-gray-500">Analytics</p>
+                        <h1 className="text-4xl font-black tracking-tighter text-dark">Your Progress.</h1>
                     </header>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                        <div className="p-8 bg-black text-white rounded-[3rem] shadow-2xl">
-                            <Icon name="TrendingUp" className="mb-4 text-neutral-500" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Volume</p>
-                            <p className="text-3xl font-black tracking-tighter">{(userData?.totalKm || 0).toFixed(1)} <span className="text-xs font-medium">KM</span></p>
+                    <div className="p-8 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-[2.5rem] mb-8 border-2 border-dark shadow-[6px_8px_0px_#0f172a]">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Icon name="Flame" size={36} color="white" />
+                            <h2 className="text-5xl font-black tracking-tighter">{userData?.streak || 0} <span className="text-2xl opacity-80">Days</span></h2>
                         </div>
-                        <div className="p-8 bg-neutral-50 rounded-[3rem] border border-neutral-100">
-                            <Icon name="Shield" className="mb-4" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Reserves</p>
-                            <p className="text-3xl font-black tracking-tighter">{userData?.shields || 1}</p>
-                        </div>
+                        <p className="font-bold text-orange-100 uppercase tracking-widest text-xs">Current active streak</p>
                     </div>
-
-                    <div className="p-8 bg-neutral-50 rounded-[3.5rem] border border-neutral-100 mb-8">
-                        <div className="flex justify-between items-end h-32 px-4 gap-2">
+                    <div className="p-8 bg-white border-2 border-dark rounded-[2.5rem] shadow-[4px_6px_0px_#0f172a]">
+                        <h3 className="font-black text-xl mb-8 uppercase text-dark">Activity Graph</h3>
+                        <div className="flex justify-between items-end h-40 px-2 gap-3">
                             {[40, 70, 45, 90, 60, 30, 80].map((h, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-3">
-                                    <div className="w-full bg-black rounded-t-xl transition-all duration-1000" style={{ height: `${h}%` }}></div>
-                                    <span className="text-[9px] font-black text-neutral-300">MTWTFSS"[i]</span>
+                                    <div className="w-full bg-dark rounded-t-md relative overflow-hidden" style={{ height: `${h}%` }}>
+                                        {i === 3 && <div className="absolute inset-0 bg-volt"></div>}
+                                    </div>
+                                    <span className="text-[10px] font-black text-gray-400">MTWTFSS"[i]</span>
                                 </div>
                             ))}
                         </div>
                     </div>
-
-                    <h3 className="font-black text-xs uppercase tracking-widest text-neutral-300 mb-6 px-2">Accuracy Check</h3>
-                    <div className="p-7 bg-white border border-neutral-100 rounded-[2.5rem] flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-green-50 rounded-xl"><Icon name="Zap" size={18} className="text-green-600" /></div>
-                            <div><p className="font-black text-sm uppercase tracking-tight">Kalman Filter</p><p className="text-[10px] text-neutral-400 font-bold uppercase">Active & Calibrated</p></div>
-                        </div>
-                        <div className="w-12 h-6 bg-neutral-100 rounded-full p-1"><div className="w-4 h-4 bg-black rounded-full ml-auto"></div></div>
-                    </div>
                 </div>
             );
-
-            const Coach = () => {
-                const [v, setV] = useState("");
-                return (
-                    <div className="h-full bg-white text-black px-6 pt-16 pb-32 overflow-y-auto custom-scroll animate__animated animate__fadeIn">
-                        <header className="mb-10"><p className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-400">AI Personal Training</p><h1 className="text-4xl font-black tracking-tighter">Circuit.</h1></header>
-                        <div className="p-8 bg-black text-white rounded-[3.5rem] shadow-2xl mb-8">
-                            <p className="text-xs font-bold uppercase tracking-widest text-neutral-500 mb-6 text-center">Protocol Vibe</p>
-                            <div className="grid grid-cols-2 gap-3 mb-8">
-                                {["High Intensity", "Active Recovery", "Low Power", "Sore Legs"].map(vibe => (
-                                    <button key={vibe} onClick={() => setV(vibe)} className={`py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${v === vibe ? 'bg-white text-black border-white' : 'border-neutral-800 text-neutral-400'}`}>{vibe}</button>
-                                ))}
-                            </div>
-                            <button onClick={() => fetchWorkout(v)} disabled={!v || isWorkoutLoading} className="w-full py-5 bg-white text-black rounded-2xl font-black text-sm btn-elite flex justify-center items-center gap-2">
-                                {isWorkoutLoading ? <Icon name="Loader2" className="animate-spin" size={16}/> : "✨ GENERATE"}
-                            </button>
-                        </div>
-                        {aiWorkout && <div className="p-8 bg-neutral-50 rounded-[3rem] border border-neutral-100 animate__animated animate__fadeIn"><pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-neutral-700">{aiWorkout}</pre></div>}
-                    </div>
-                );
-            };
 
             const Run = () => {
                 const circ = 2 * Math.PI * 140;
                 const offset = circ - (Math.min(100, (distance / 5000) * 100) / 100) * circ;
 
+                // Post-Run Summary
                 if (lastSummary && !isRunning) {
                     return (
-                        <div className="fixed inset-0 z-[60] bg-white text-black p-8 flex flex-col justify-between overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                        <div className="fixed inset-0 z-[60] bg-white text-dark p-8 flex flex-col justify-between overflow-y-auto custom-scroll animate__animated animate__fadeIn">
                             <div>
-                                <header className="flex justify-between items-center mb-12"><h2 className="text-4xl font-black tracking-tighter">Session.</h2><button onClick={() => setView('home')} className="p-3 bg-neutral-50 rounded-2xl"><Icon name="X" size={20}/></button></header>
-                                <div className="grid grid-cols-2 gap-4 mb-10">
-                                    <div className="p-8 bg-black text-white rounded-[3rem] shadow-xl"><p className="text-[10px] font-bold text-neutral-500 uppercase mb-1">Total</p><p className="text-4xl font-black tracking-tighter">{(distance/1000).toFixed(2)} km</p></div>
-                                    <div className="p-8 bg-neutral-50 rounded-[3rem]"><p className="text-[10px] font-bold text-neutral-400 uppercase mb-1">Time</p><p className="text-4xl font-black tracking-tighter">{Math.floor(elapsed/60)}m</p></div>
+                                <header className="flex justify-between items-center mb-12">
+                                    <h2 className="text-5xl font-black tracking-tighter text-dark">Session <br/><span className="text-volt drop-shadow-md">Complete.</span></h2>
+                                </header>
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="p-6 bg-dark text-white rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
+                                        <p className="text-[10px] font-black text-volt uppercase mb-2 tracking-widest">Total Distance</p>
+                                        <p className="text-4xl font-black tracking-tighter">{(lastSummary.distance/1000).toFixed(2)}<span className="text-lg">km</span></p>
+                                    </div>
+                                    <div className="p-6 bg-white rounded-[2rem] border-2 border-dark shadow-[4px_6px_0px_#0f172a]">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Total Time</p>
+                                        <p className="text-4xl font-black tracking-tighter text-dark">{Math.floor(lastSummary.duration/60)}<span className="text-lg">m</span></p>
+                                    </div>
                                 </div>
-                                <button onClick={fetchAnalysis} disabled={isAnalysisLoading} className="w-full py-6 bg-black text-white rounded-[2.5rem] font-bold flex items-center justify-center gap-2 mb-6 btn-elite">
-                                    {isAnalysisLoading ? <Icon name="Loader2" className="animate-spin" size={20}/> : "✨ ANALYZE PERFORMANCE"}
-                                </button>
-                                {aiAnalysis && <div className="p-8 bg-neutral-50 border border-neutral-100 rounded-[3rem] animate__animated animate__fadeIn"><p className="text-[10px] font-black uppercase text-neutral-400 mb-4 tracking-widest">Coach Analysis</p><p className="text-sm font-medium leading-relaxed italic">"{aiAnalysis}"</p></div>}
+                                <div className="p-8 bg-white border-2 border-dark rounded-[2.5rem] mb-6 shadow-[4px_6px_0px_#0f172a]">
+                                    <p className="text-[10px] font-black text-gray-500 uppercase mb-2 tracking-widest">Calories Burned</p>
+                                    <p className="text-4xl font-black text-dark">~{Math.floor((lastSummary.distance/1000) * 75 * 1.036)} <span className="text-lg">kcal</span></p>
+                                </div>
                             </div>
-                            <button onClick={() => setView('home')} className="w-full py-7 border border-neutral-100 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em]">Return to Protocol</button>
+                            <button onClick={() => setView('home')} className="w-full py-6 bg-volt text-dark rounded-[2rem] font-black text-xl border-2 border-dark shadow-[4px_6px_0px_#0f172a] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest">RETURN HOME</button>
                         </div>
                     );
                 }
 
+                // Active Running Screen
                 return (
-                    <div className="fixed inset-0 z-[60] bg-black text-white p-8 flex flex-col justify-between animate__animated animate__slideInUp">
+                    <div className="fixed inset-0 z-[60] bg-dark text-white p-8 flex flex-col justify-between animate__animated animate__slideInUp">
                         <header className="flex justify-between items-center z-10">
-                            <button onClick={() => !isRunning && setView('home')} className="text-neutral-700 font-black text-[10px] tracking-widest uppercase">{!isRunning ? "Cancel" : ""}</button>
-                            <div className="flex items-center gap-3 bg-neutral-900 px-5 py-2.5 rounded-full border border-white/5">
-                                <div className={`w-2 h-2 rounded-full ${isRunning && !isPaused ? 'bg-green-500 animate-pulse' : 'bg-orange-500'}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{isRunning ? "Live Sensor" : "Ready"}</span>
+                            <button onClick={() => !isRunning && setView('home')} className="text-gray-400 font-bold text-xs uppercase hover:text-white transition-colors">{!isRunning ? "Cancel" : ""}</button>
+                            <div className="flex items-center gap-3 bg-slate-800 px-5 py-2.5 rounded-full border border-slate-700">
+                                <div className={`w-3 h-3 rounded-full ${isRunning && !isPaused ? 'bg-volt animate-pulse' : 'bg-orange-500'}`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{isRunning ? "RECORDING" : "READY"}</span>
                             </div>
-                            <div className="text-[9px] font-black text-neutral-800 uppercase">GPS Accuracy: {accuracy.toFixed(0)}m</div>
+                            <div className="w-12"></div>
                         </header>
+                        
                         <div className="relative flex-1 flex flex-col items-center justify-center">
-                            <svg className="absolute w-[360px] h-[360px] -rotate-90">
-                                <circle cx="180" cy="180" r="140" stroke="#111" strokeWidth="4" fill="transparent" />
-                                <circle cx="180" cy="180" r="140" stroke="white" strokeWidth="10" fill="transparent" strokeDasharray={circ} style={{ strokeDashoffset: offset }} strokeLinecap="round" className="progress-ring-circle drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]" />
+                            <svg className="absolute w-[360px] h-[360px] -rotate-90 pointer-events-none">
+                                <circle cx="180" cy="180" r="140" stroke="#1e293b" strokeWidth="8" fill="transparent" />
+                                <circle cx="180" cy="180" r="140" stroke="#ccff00" strokeWidth="12" fill="transparent" strokeDasharray={circ} style={{ strokeDashoffset: offset }} strokeLinecap="round" className="progress-ring-circle drop-shadow-[0_0_15px_rgba(204,255,0,0.5)]" />
                             </svg>
                             <div className="z-10 text-center animate__animated animate__zoomIn">
-                                <p className="text-neutral-600 text-[10px] font-black uppercase tracking-[0.6em] mb-4">Distance</p>
-                                <h1 className="text-[120px] font-light leading-none tracking-tighter tabular-nums text-glow">{(distance / 1000).toFixed(2)}</h1>
-                                <p className="text-xl font-black text-neutral-500 uppercase tracking-widest mt-2">Kilometers</p>
+                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Distance</p>
+                                <h1 className="text-[110px] font-black leading-none tracking-tighter tabular-nums text-white text-glow">{(distance / 1000).toFixed(2)}</h1>
+                                <p className="text-xl font-bold text-volt uppercase tracking-widest mt-2">Kilometers</p>
                             </div>
                         </div>
-                        <div className="w-full flex justify-center items-center gap-10 mb-20 z-20">
+
+                        <div className="w-full flex justify-center items-center gap-8 mb-10 z-20">
                             {!isRunning ? (
-                                <button onClick={startRun} className="w-32 h-32 bg-white text-black rounded-full flex items-center justify-center shadow-2xl btn-elite"><Icon name="Play" size={48} className="fill-black" /></button>
+                                <button onClick={startRun} className="w-32 h-32 bg-volt text-dark rounded-full flex items-center justify-center border-4 border-dark shadow-[0_15px_40px_rgba(204,255,0,0.3)] active:scale-95 transition-transform"><Icon name="Play" size={48} color="#0f172a" /></button>
                             ) : (
                                 <>
-                                    <button onClick={() => setIsPaused(!isPaused)} className="w-20 h-20 border-2 border-neutral-800 rounded-full flex items-center justify-center active:scale-95 transition-all">{isPaused ? <Icon name="Play" size={28} /> : <Icon name="Pause" size={28} />}</button>
-                                    <button onClick={stopRun} className="w-32 h-32 bg-red-600 rounded-full flex items-center justify-center shadow-2xl btn-elite"><Icon name="Square" size={40} className="fill-white" /></button>
+                                    <button onClick={() => setIsPaused(!isPaused)} className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-600 active:scale-95 transition-all">{isPaused ? <Icon name="Play" size={32} color="white"/> : <Icon name="Pause" size={32} color="white"/>}</button>
+                                    <button onClick={stopRun} className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center border-4 border-dark shadow-[0_15px_40px_rgba(239,68,68,0.3)] active:scale-95 transition-transform"><Icon name="Square" size={40} color="#0f172a" /></button>
                                 </>
                             )}
                         </div>
@@ -419,64 +441,118 @@
             };
 
             const Profile = () => (
-                <div className="h-full bg-white text-black px-8 pt-20 pb-32 overflow-y-auto custom-scroll animate__animated animate__fadeIn">
-                    <div className="flex flex-col items-center mb-12 animate__animated animate__zoomIn">
-                        <div className="w-32 h-32 bg-neutral-50 rounded-full flex items-center justify-center mb-6 border border-neutral-100 shadow-inner"><Icon name="User" size={60} className="text-neutral-300" /></div>
-                        <h2 className="text-4xl font-black tracking-tighter mb-1">Athlete.</h2>
-                        <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.4em]">Elite Status Validated</p>
+                <div className="h-full bg-gray-50 text-dark px-8 pt-16 pb-[140px] overflow-y-auto custom-scroll animate__animated animate__fadeIn">
+                    <div className="flex flex-col items-center mb-10">
+                        {/* Profile Picture Upload Container */}
+                        <label className="relative block w-36 h-36 rounded-[2.5rem] bg-white border-4 border-dark flex items-center justify-center mb-6 shadow-[6px_8px_0px_#0f172a] cursor-pointer overflow-hidden profile-pic-container">
+                            {userData?.profilePic ? (
+                                <img src={userData.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <Icon name="User" size={60} color="#cbd5e1" />
+                            )}
+                            <div className="absolute inset-0 bg-dark/60 flex items-center justify-center upload-overlay">
+                                <Icon name="Camera" size={32} color="white" />
+                            </div>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </label>
+
+                        <h2 className="text-4xl font-black tracking-tighter text-dark mb-1 uppercase">{userData?.name || 'Athlete'}</h2>
+                        <div className="bg-dark text-volt px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest mt-2">Elite Status</div>
                     </div>
-                    <div className="space-y-4">
-                        <div onClick={() => setView('privacy')} className="p-8 bg-black text-white rounded-[3rem] flex justify-between items-center cursor-pointer shadow-2xl btn-elite">
-                            <div className="flex items-center gap-5"><div className="w-12 h-12 bg-neutral-900 rounded-2xl flex items-center justify-center border border-white/10"><Icon name="Shield" size={24} /></div><div><p className="font-black text-lg tracking-tight">Privacy & Security</p><p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">End-to-End Encryption</p></div></div>
-                            <Icon name="ChevronRight" size={20} className="text-neutral-600" />
+                    
+                    <div className="space-y-5">
+                        <div onClick={() => setView('privacy')} className="p-8 bg-white border-2 border-dark rounded-[2rem] flex justify-between items-center cursor-pointer shadow-[4px_6px_0px_#0f172a] active:translate-y-1 active:shadow-[2px_3px_0px_#0f172a] transition-all">
+                            <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 bg-dark rounded-xl flex items-center justify-center">
+                                    <Icon name="Shield" size={24} color="#ccff00" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-lg uppercase text-dark">Data Policy</p>
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Privacy Controls</p>
+                                </div>
+                            </div>
+                            <Icon name="ChevronRight" size={24} color="#0f172a" />
                         </div>
-                        <div className="p-8 border border-neutral-100 rounded-[3rem] flex justify-between items-center opacity-50">
-                            <div className="flex items-center gap-5"><div className="w-12 h-12 bg-neutral-50 rounded-2xl flex items-center justify-center"><Icon name="Settings" size={24} /></div><p className="font-black text-lg tracking-tight">Protocol Settings</p></div>
-                            <Icon name="Lock" size={18} className="text-neutral-300" />
+
+                        <div className="p-8 bg-white border-2 border-gray-300 rounded-[2rem] flex justify-between items-center opacity-70">
+                            <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                                    <Icon name="Settings" size={24} color="#64748b" />
+                                </div>
+                                <p className="font-black text-lg text-gray-600 uppercase">Settings</p>
+                            </div>
+                            <Icon name="Lock" size={20} color="#94a3b8" />
                         </div>
                     </div>
-                    <button onClick={() => location.reload()} className="w-full mt-16 text-center text-neutral-300 text-[10px] font-black uppercase tracking-[0.5em]">Reset Protocol</button>
                 </div>
             );
 
             const Privacy = () => (
-                <div className="fixed inset-0 z-[100] bg-white text-black flex flex-col animate__animated animate__slideInUp">
-                    <header className="px-8 pt-16 pb-8 border-b border-neutral-100 bg-white flex items-center justify-between sticky top-0 z-10"><button onClick={() => setView('profile')} className="p-4 bg-neutral-50 rounded-2xl btn-elite"><Icon name="ChevronLeft" size={24}/></button><h2 className="text-2xl font-black tracking-tighter">Legal & Privacy</h2><div className="w-12"></div></header>
-                    <div className="flex-1 overflow-y-auto p-12 custom-scroll space-y-12">
-                        <div className="space-y-4"><p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Version 1.4 | April 2026</p><h3 className="text-4xl font-black tracking-tighter">Privacy is our core foundation.</h3></div>
-                        {[
-                            { id: "01", title: "Data Protocol", text: "We collect biometric and telemetry data purely to optimize measurement accuracy via our elite sensor fusion engine." },
-                            { id: "02", title: "AI Integrity", text: "Training routines are generated via the Gemini API. Your session data is processed in real-time and remains local to your device." },
-                            { id: "08", title: "Contact Security", text: "Direct channel: farmanshafi2007@gmail.com" }
-                        ].map(s => (
-                            <div key={s.id} className="space-y-4">
-                                <div className="flex items-center gap-4"><span className="text-[10px] font-black text-neutral-200 uppercase">{s.id}</span><h4 className="font-black text-xl tracking-tight">{s.title}</h4></div>
-                                <p className="text-neutral-500 leading-relaxed pl-8 text-sm">{s.text}</p>
-                            </div>
-                        ))}
+                <div className="fixed inset-0 z-[100] bg-dark text-white flex flex-col animate__animated animate__slideInRight">
+                    <header className="px-8 pt-16 pb-8 border-b border-slate-800 bg-dark flex items-center justify-between sticky top-0 z-10">
+                        <button onClick={() => setView('profile')} className="p-4 bg-slate-800 rounded-2xl active:scale-95 transition-transform"><Icon name="ChevronLeft" size={24} color="white"/></button>
+                        <h2 className="text-xl font-black tracking-tighter uppercase text-volt">Privacy</h2>
+                        <div className="w-14"></div>
+                    </header>
+                    <div className="flex-1 overflow-y-auto p-10 custom-scroll space-y-10">
+                        <h3 className="text-4xl font-black tracking-tighter leading-tight">Data Handling Protocol.</h3>
+                        
+                        <div className="space-y-4">
+                            <h4 className="font-black text-lg text-volt uppercase tracking-widest">01. Telemetry</h4>
+                            <p className="text-gray-400 leading-relaxed text-sm font-medium">We collect fitness telemetry (GPS paths) only while a run is actively recording. This data is kept strictly local to your device.</p>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <h4 className="font-black text-lg text-volt uppercase tracking-widest">02. Analytics</h4>
+                            <p className="text-gray-400 leading-relaxed text-sm font-medium">Your workout history and profile image are securely stored locally in your browser storage to provide you with lifetime stats and streak tracking.</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h4 className="font-black text-lg text-volt uppercase tracking-widest">03. Support</h4>
+                            <p className="text-gray-400 leading-relaxed text-sm font-medium">If you need your data cleared, simply clear your browser data or reinstall the app. Contact protocol: farmanshafi2007@gmail.com.</p>
+                        </div>
+                        
                         <div className="h-32" />
                     </div>
                 </div>
             );
 
+            // Nav Configuration for the Box Design
+            const navItems = [
+                { id: 'home', icon: 'Home', label: 'HOME' },
+                { id: 'stats', icon: 'BarChart2', label: 'STATS' },
+                { id: 'profile', icon: 'User', label: 'PROFILE' }
+            ];
+
             return (
-                <div className="h-screen w-full bg-white relative overflow-hidden">
+                <div className="h-[100dvh] w-full bg-gray-50 relative overflow-hidden selection:bg-volt selection:text-dark">
                     {view === 'splash' && <Splash />}
                     {view === 'home' && <Home />}
                     {view === 'stats' && <Stats />}
-                    {view === 'coach' && <Coach />}
                     {view === 'run' && <Run />}
                     {view === 'profile' && <Profile />}
                     {view === 'privacy' && <Privacy />}
                     {view === 'onboarding' && <Onboarding />}
 
-                    {['home', 'profile', 'coach', 'stats'].includes(view) && (
-                        <nav className="fixed bottom-0 inset-x-0 h-28 nav-dock flex items-center justify-around px-8 pb-8 z-50">
-                            <button onClick={() => setView('home')} className={`p-4 transition-all ${view === 'home' ? 'text-black scale-125' : 'text-neutral-300'}`}><Icon name="Home" size={26}/></button>
-                            <button onClick={() => setView('stats')} className={`p-4 transition-all ${view === 'stats' ? 'text-black scale-125' : 'text-neutral-300'}`}><Icon name="BarChart2" size={26}/></button>
-                            <button onClick={() => setView('coach')} className={`p-4 transition-all ${view === 'coach' ? 'text-black scale-125' : 'text-neutral-300'}`}><Icon name="Zap" size={26}/></button>
-                            <button onClick={() => setView('profile')} className={`p-4 transition-all ${view === 'profile' ? 'text-black scale-125' : 'text-neutral-300'}`}><Icon name="User" size={26}/></button>
-                        </nav>
+                    {/* FIXED BOTTOM NAVIGATION - Distinct Small Boxes with Black Borders */}
+                    {['home', 'profile', 'stats'].includes(view) && (
+                        <div className="fixed bottom-0 inset-x-0 w-full nav-dock-container z-50 flex justify-center pointer-events-none">
+                            <nav className="bg-white border-2 border-dark rounded-[2rem] shadow-[0_8px_30px_rgba(0,0,0,0.15)] px-3 py-2 flex items-center gap-2 pointer-events-auto mx-4 mb-4">
+                                {navItems.map((item) => {
+                                    const isActive = view === item.id;
+                                    return (
+                                        <button 
+                                            key={item.id}
+                                            onClick={() => setView(item.id)} 
+                                            className={`flex flex-col items-center justify-center w-[72px] h-[64px] rounded-[1.2rem] nav-item-box ${isActive ? 'active' : 'text-gray-400 hover:bg-gray-100'}`}
+                                        >
+                                            <Icon name={item.icon} size={22} color={isActive ? '#0f172a' : 'currentColor'} />
+                                            <span className={`text-[9px] font-black mt-1 ${isActive ? 'text-dark' : 'text-gray-400'}`}>{item.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
                     )}
                 </div>
             );
