@@ -353,7 +353,7 @@
             }
         };
 
-        // --- SENSOR FUSION ENGINE (Production-Level Real-Time Tracking) --- // Improved sensitivity for real-time meters
+        // --- SENSOR FUSION ENGINE (Production-Level Real-Time Tracking) --- 
         class GPSEngine {
             constructor() {
                 this.lastValidPoint = null;
@@ -362,6 +362,7 @@
                 this.lowSpeedDuration = 0;
                 this.consecutiveGoodAccuracyCount = 0;
                 this.isLocked = false;
+                this.stationaryCount = 0;
             }
 
             haversine(lat1, lon1, lat2, lon2) {
@@ -388,12 +389,15 @@
                 if (!this.isLocked) {
                     if (accuracy <= 40) {
                         this.consecutiveGoodAccuracyCount++;
-                        if (this.consecutiveGoodAccuracyCount >= 2) { // Locked after 2 good pings
+                        // Increased required consecutive pings to 3 to ensure stable start
+                        if (this.consecutiveGoodAccuracyCount >= 3) { 
                             this.isLocked = true;
                             this.lastValidPoint = { lat: latitude, lng: longitude };
                             this.lastTime = timestamp;
                             return { status: 'LOCKED', distance: this.totalDistance, accuracy };
                         }
+                    } else {
+                        this.consecutiveGoodAccuracyCount = 0;
                     }
                     return { status: 'LOCKING', distance: this.totalDistance, accuracy };
                 }
@@ -404,22 +408,32 @@
 
                 // 4. Distance Calculation (Haversine)
                 const dist = this.haversine(this.lastValidPoint.lat, this.lastValidPoint.lng, latitude, longitude);
-
-                // 5. Noise and Jump Filtering (Strava-like filtering)
                 const speedMs = dist / dt;
+
+                // --- CRITICAL GHOST DISTANCE FIX ---
+                // If total distance is 0 and the first move is huge (> 8m), it's just the GPS refining itself.
+                // We update the center point but DO NOT add distance.
+                if (this.totalDistance === 0 && dist > 8) {
+                    this.lastValidPoint = { lat: latitude, lng: longitude };
+                    this.lastTime = timestamp;
+                    return { status: 'REFINING', distance: this.totalDistance, accuracy, speed: 0 };
+                }
                 
-                // Speed threshold: 0.2 m/s (approx 0.7 km/h) to avoid "GPS drift" distance while standing still
-                if (speedMs < 0.2) {
+                // Speed threshold: 0.3 m/s (approx 1.0 km/h) to avoid "GPS drift" while standing still
+                if (speedMs < 0.3) {
+                    this.stationaryCount++;
                     this.lowSpeedDuration += dt;
                     if (this.lowSpeedDuration >= 10) return { status: 'AUTO_PAUSED', distance: this.totalDistance, accuracy, speed: 0 };
                     return { status: 'STATIONARY', distance: this.totalDistance, accuracy };
                 }
 
+                this.stationaryCount = 0; // Reset stationary count since we are moving
+
                 // Jump filter: Ignore speeds > 12 m/s (43 km/h) as it's likely a GPS glitch or driving
                 if (speedMs > 12) return { status: 'JUMP', distance: this.totalDistance, accuracy };
                 
-                // 6. Valid Movement // Added distance only if moved more than 1.5m to keep meter stable
-                if (dist > 1.5) {
+                // 6. Valid Movement: Requires at least 2 meters of movement to prevent micro-drifts from adding up
+                if (dist > 2.0) {
                     this.totalDistance += dist;
                     this.lastValidPoint = { lat: latitude, lng: longitude };
                     this.lastTime = timestamp;
@@ -589,6 +603,11 @@
                             setGpsStatus("LOCKING...");
                             return;
                         }
+                        
+                        if (result.status === 'REFINING') {
+                            setGpsStatus("CALIBRATING");
+                            return;
+                        }
 
                         setGpsStatus("RECORDING");
 
@@ -641,8 +660,8 @@
                 const paceString = formatPace(finalElapsed, finalDistance);
                 const calories = Math.floor(finalDistanceKm * 75 * 1.036); // Precision Calorie calc
 
-                if (finalDistance > 5) { 
-                    // Route to Mandatory Full-Screen Naming Modal instead of basic prompt
+                // MUCH STRICTER threshold: Force naming modal even on small runs (e.g. 2 meters or 5 seconds)
+                if (finalDistance > 2 || finalElapsed > 5) { 
                     setPendingRun({
                         id: Date.now().toString(),
                         timestamp: Date.now(),
@@ -651,8 +670,9 @@
                         pace: paceString,
                         calories: calories
                     });
-                    setView('save_run'); // Switch view instead of saving immediately
+                    setView('save_run'); 
                 } else {
+                    // Only drop completely 0m / super quick test runs
                     setLastSummary({ distance: 0, duration: 0, pace: "0:00" });
                     setView('home');
                 }
@@ -1091,7 +1111,7 @@
                                 autoFocus
                             />
 
-                            <div className="flex flex-wrap gap-2 mb-12">
+                            <div className="flex flex-wrap gap-2 mb-8">
                                 {suggestions.map(s => (
                                     <button 
                                         key={s} 
@@ -1102,6 +1122,10 @@
                                     </button>
                                 ))}
                             </div>
+
+                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-4 text-center">
+                                * A mission name is strictly required to save
+                            </p>
 
                             <button 
                                 onClick={() => saveCompletedRun(inputName)}
@@ -1298,7 +1322,7 @@
                 const getGpsDotColor = () => {
                     if (gpsStatus === "ERROR") return "bg-red-500";
                     if (gpsStatus === "POOR SIGNAL" || gpsStatus === "LOCKING...") return "bg-orange-400";
-                    if (gpsStatus === "WAITING") return "bg-slate-500";
+                    if (gpsStatus === "WAITING" || gpsStatus === "CALIBRATING") return "bg-slate-500";
                     return "bg-neonCyan";
                 };
 
