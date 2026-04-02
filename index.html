@@ -20,7 +20,8 @@
                     colors: {
                         dark: '#0f172a',
                         brandBlue: '#2563eb',
-                        brandPurple: '#a855f7'
+                        brandPurple: '#a855f7',
+                        neonCyan: '#22d3ee',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -194,6 +195,62 @@
             border: 2.5px solid #e2e8f0 !important;
             box-shadow: 4px 6px 0px #94a3b8 !important;
         }
+
+        /* NEW: HIGH ENERGY RUN SCREEN STYLES */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        .hero-distance-glow {
+            text-shadow: 0 0 30px rgba(34, 211, 238, 0.6), 0 0 60px rgba(34, 211, 238, 0.3);
+        }
+
+        .glass-metric {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .breathing-pulse {
+            animation: ring-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes ring-pulse {
+            0%, 100% { opacity: 0.8; stroke-width: 12; }
+            50% { opacity: 1; stroke-width: 14; }
+        }
+
+        .control-button-stop {
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .control-button-pause {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .gps-pulse {
+            animation: gps-blink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes gps-blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.9); }
+        }
+
+        .running-bg-glow {
+            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.1) 0%, transparent 70%);
+        }
+
+        .number-pop {
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
     </style>
 </head>
 <body>
@@ -228,7 +285,9 @@
                     RefreshCcw: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>`,
                     Settings: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
                     Lock: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
-                    Calendar: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`
+                    Calendar: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
+                    Timer: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+                    Wind: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>`
                 };
                 setSvgHtml(icons[name] || '');
             }, [name, size, className, color]);
@@ -435,7 +494,7 @@
             // --- TRACKING LOGIC ---
             const updateUI = useCallback(() => {
                 const now = Date.now();
-                if (now - runDataRef.current.lastUiUpdate >= 500) {
+                if (now - runDataRef.current.lastUiUpdate >= 250) { // Higher frequency for smoother feel
                     let elapsedMs = 0;
                     if (isPausedRef.current) {
                         elapsedMs = runDataRef.current.pauseStartTime - runDataRef.current.startTime - runDataRef.current.totalPausedTime;
@@ -596,9 +655,10 @@
             };
 
             const formatTime = (totalSeconds) => {
-                const m = Math.floor(totalSeconds / 60);
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
                 const s = totalSeconds % 60;
-                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                return `${h > 0 ? h.toString().padStart(2, '0') + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             };
 
             // AI Functions
@@ -844,11 +904,18 @@
             };
 
             const Run = () => { 
-                const circ = 2 * Math.PI * 130; 
-                
-                // Improved scale logic for display
+                const missionGoalMeters = 2500; // 2.5km goal from Home screen
                 const displayDistance = distance < 1000 ? Math.floor(distance) : (distance / 1000).toFixed(2);
-                const displayUnit = distance < 1000 ? "Meters" : "Kilometers";
+                const displayUnit = distance < 1000 ? "m" : "km";
+                const progressPercent = Math.min(100, (distance / missionGoalMeters) * 100);
+
+                // GPS Dot Logic
+                const getGpsDotColor = () => {
+                    if (gpsStatus === "ERROR") return "bg-red-500";
+                    if (gpsStatus === "POOR SIGNAL" || gpsStatus === "LOCKING...") return "bg-orange-400";
+                    if (gpsStatus === "WAITING") return "bg-slate-500";
+                    return "bg-neonCyan";
+                };
 
                 // Post-Run Summary View
                 if (lastSummary && !isRunning) {
@@ -907,76 +974,133 @@
 
                 // Active Running Screen View
                 return (
-                    <div className="absolute inset-0 z-[60] bg-slate-900 text-white flex flex-col justify-between animate__animated animate__slideInUp overflow-hidden overscroll-none w-full h-full">
-                        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#334155 1.5px, transparent 1.5px)', backgroundSize: '24px 24px', opacity: 0.3 }}></div>
+                    <div className={`absolute inset-0 z-[60] bg-slate-950 text-white flex flex-col justify-between animate__animated animate__slideInUp overflow-hidden overscroll-none w-full h-full transition-all duration-700 ${isPaused ? 'brightness-50' : 'brightness-100'}`}>
+                        {/* Background Layer */}
+                        <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
+                        <div className="absolute inset-0 running-bg-glow pointer-events-none"></div>
 
-                        <header className="relative flex justify-between items-center z-10 p-8 pb-0 pt-12">
-                            <button onClick={() => !isRunning && setView('home')} className="text-slate-400 font-bold text-xs uppercase hover:text-white transition-colors">{!isRunning ? "Cancel" : ""}</button>
-                            <div className="flex items-center gap-3 bg-slate-800 px-5 py-2.5 rounded-full border-2 border-slate-700">
-                                <div className={`w-3 h-3 rounded-full ${gpsStatus === 'WAITING' ? 'bg-orange-500 animate-pulse' : (autoPaused ? 'bg-orange-500' : 'bg-blue-500 animate-pulse')}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">
-                                    {gpsStatus}
+                        {/* Modern GPS Status Top Bar */}
+                        <header className="relative flex justify-between items-center z-10 p-8 pt-12">
+                            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                                <div className={`w-2 h-2 rounded-full ${getGpsDotColor()} ${gpsStatus === 'RECORDING' ? '' : 'gps-pulse shadow-[0_0_8px_#22d3ee]'}`} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/70">
+                                    {gpsStatus === "RECORDING" ? "GPS ACTIVE" : gpsStatus}
                                 </span>
                             </div>
-                            <div className="text-[10px] font-black text-slate-500 uppercase">{accuracy > 0 && accuracy <= 30 ? `GPS: OK` : (accuracy > 30 ? `GPS: POOR` : '...')}</div>
+                            
+                            <div className="bg-white/5 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                                <p className="text-[9px] font-black text-neonCyan uppercase tracking-widest">
+                                    ELITE SENSORS
+                                </p>
+                            </div>
                         </header>
                         
-                        <div className="relative flex-1 flex flex-col items-center justify-center w-full px-4">
-                            <div className="relative flex items-center justify-center mb-8 w-14 h-14">
-                                <svg className="absolute w-16 h-16 -rotate-90 pointer-events-none opacity-80">
-                                    <circle cx="32" cy="32" r="28" stroke="#171717" strokeWidth="4" fill="transparent" />
-                                    <circle cx="32" cy="32" r="28" stroke="#3b82f6" strokeWidth="4" fill="transparent"
-                                        strokeDasharray={2 * Math.PI * 28}
-                                        strokeDashoffset={(2 * Math.PI * 28) - ((elapsed % 60) / 60) * (2 * Math.PI * 28)}
-                                        strokeLinecap="round" className="transition-all duration-1000 ease-linear drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]" />
+                        {/* Hero Center Display */}
+                        <div className="relative flex-1 flex flex-col items-center justify-center w-full px-4 mb-4">
+                            {/* breathing / Pulse Circular Progress Ring */}
+                            <div className="relative flex items-center justify-center">
+                                <svg className="absolute w-[300px] h-[300px] sm:w-[340px] sm:h-[340px] -rotate-90 pointer-events-none">
+                                    {/* Track Ring */}
+                                    <circle cx="50%" cy="50%" r="135" stroke="rgba(255,255,255,0.03)" strokeWidth="12" fill="transparent" />
+                                    {/* Active Ring */}
+                                    <circle 
+                                        cx="50%" 
+                                        cy="50%" 
+                                        r="135" 
+                                        stroke="#22d3ee" 
+                                        strokeWidth="12" 
+                                        fill="transparent" 
+                                        strokeDasharray={2 * Math.PI * 135} 
+                                        style={{ 
+                                            strokeDashoffset: 2 * Math.PI * 135 - (progressPercent / 100) * (2 * Math.PI * 135),
+                                            filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                                        }} 
+                                        strokeLinecap="round" 
+                                        className={`transition-all duration-1000 ease-out ${!isPaused ? 'breathing-pulse' : ''}`} 
+                                    />
                                 </svg>
-                            </div>
 
-                            <div className="relative flex items-center justify-center mb-8">
-                                <svg className="absolute w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] -rotate-90 pointer-events-none">
-                                    <circle cx="50%" cy="50%" r="130" stroke="#171717" strokeWidth="8" fill="transparent" />
-                                    <circle cx="50%" cy="50%" r="130" stroke="#ffffff" strokeWidth="12" fill="transparent" strokeDasharray={2 * Math.PI * 130} style={{ strokeDashoffset: 2 * Math.PI * 130 - (Math.min(100, (distance / 5000) * 100) / 100) * (2 * Math.PI * 130) }} strokeLinecap="round" className="progress-ring-circle drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
-                                </svg>
                                 <div className="z-10 text-center animate__animated animate__zoomIn">
-                                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2">Distance</p>
-                                    <h1 className="text-[80px] sm:text-[100px] font-black leading-none tracking-tighter tabular-nums text-white text-glow">
+                                    <h1 className="text-[90px] sm:text-[110px] font-black leading-none tracking-tighter tabular-nums text-white hero-distance-glow number-pop">
                                         {displayDistance}
                                     </h1>
-                                    <p className="text-lg font-bold text-neutral-400 uppercase tracking-widest mt-1">
+                                    <p className="text-xl font-black text-neonCyan/60 uppercase tracking-[0.5em] mt-2 translate-x-1">
                                         {displayUnit}
                                     </p>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="grid grid-cols-3 gap-3 w-full max-w-md z-10 mt-4 px-2">
-                                <div className="bg-slate-800 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center relative overflow-hidden flex flex-col items-center justify-center shadow-lg">
-                                    <div className={`absolute inset-0 bg-blue-500/20 transition-opacity duration-500 ${elapsed % 2 === 0 ? 'opacity-100' : 'opacity-0'}`}></div>
-                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1 relative z-10">Time</p>
-                                    <p className="text-xl font-black text-white tabular-nums relative z-10 text-glow">{formatTime(elapsed)}</p>
+                        {/* Glassmorphic Metrics Row */}
+                        <div className="px-6 mb-8 w-full max-w-lg mx-auto z-10">
+                            <div className="grid grid-cols-3 gap-3">
+                                {/* Time Card */}
+                                <div className="glass-metric p-4 rounded-3xl text-center relative overflow-hidden group">
+                                    <div className="flex justify-center mb-2">
+                                        <Icon name="Timer" size={16} color="#94a3b8" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-1">Time</p>
+                                    <p className="text-lg font-black text-white tabular-nums">{formatTime(elapsed)}</p>
                                 </div>
-                                <div className="bg-slate-800 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center shadow-lg">
-                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Pace</p>
-                                    <p className="text-xl font-black text-white tabular-nums mt-1">{formatPace(elapsed, distance)}</p>
+
+                                {/* Pace Card */}
+                                <div className="glass-metric p-4 rounded-3xl text-center">
+                                    <div className="flex justify-center mb-2">
+                                        <Icon name="Wind" size={16} color="#94a3b8" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-1">Pace</p>
+                                    <p className="text-lg font-black text-white tabular-nums">{formatPace(elapsed, distance)}</p>
                                 </div>
-                                <div className="bg-slate-800 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center shadow-lg">
-                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Speed</p>
-                                    <p className="text-xl font-black text-white tabular-nums mt-1">{currentSpeed > 0 ? currentSpeed.toFixed(1) : "0.0"}</p>
+
+                                {/* Speed Card */}
+                                <div className="glass-metric p-4 rounded-3xl text-center">
+                                    <div className="flex justify-center mb-2">
+                                        <Icon name="TrendingUp" size={16} color="#94a3b8" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-1">Speed</p>
+                                    <p className="text-lg font-black text-white tabular-nums">{currentSpeed > 0 ? currentSpeed.toFixed(1) : "0.0"}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="relative w-full flex justify-center items-center gap-8 p-8 pb-12 z-20">
-                            {!isRunning ? (
-                                <button onClick={startRun} className="w-24 h-24 bg-white text-black rounded-full flex items-center justify-center active:scale-95 transition-transform"><Icon name="Play" size={40} color="black" /></button>
-                            ) : (
-                                <>
-                                    <button onClick={togglePause} className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center border border-neutral-700 active:scale-95 transition-all">
-                                        {isPaused ? <Icon name="Play" size={24} color="white"/> : <Icon name="Pause" size={24} color="white"/>}
-                                    </button>
-                                    <button onClick={stopRun} className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.4)] active:scale-95 transition-transform"><Icon name="Square" size={36} color="white" /></button>
-                                </>
-                            )}
+                        {/* Control Area */}
+                        <div className="relative w-full flex flex-col items-center gap-8 p-8 pb-16 z-20">
+                            <div className="flex items-center gap-8">
+                                {/* Pause Button */}
+                                <button 
+                                    onClick={togglePause} 
+                                    className="control-button-pause w-20 h-20 rounded-full flex items-center justify-center active:scale-90 transition-all duration-200"
+                                >
+                                    {isPaused ? <Icon name="Play" size={28} color="white"/> : <Icon name="Pause" size={28} color="white"/>}
+                                </button>
+
+                                {/* Stop Button */}
+                                <button 
+                                    onClick={stopRun} 
+                                    className="control-button-stop w-28 h-28 rounded-full flex items-center justify-center border-4 border-white/10 active:scale-95 transition-all duration-300 group"
+                                >
+                                    <div className="bg-white/10 p-4 rounded-full group-active:scale-75 transition-transform">
+                                        <Icon name="Square" size={32} color="white" />
+                                    </div>
+                                </button>
+                            </div>
+                            
+                            {/* Helpful Tip or State */}
+                            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] h-4">
+                                {isPaused ? "SESSION PAUSED" : (distance > missionGoalMeters ? "MISSION ACCOMPLISHED" : "KEEP PUSHING")}
+                            </p>
                         </div>
+
+                        {/* Paused Blur Overlay */}
+                        {isPaused && (
+                            <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+                                <div className="text-center animate__animated animate__fadeIn">
+                                    <div className="bg-white/10 backdrop-blur-md px-8 py-4 rounded-full border border-white/20">
+                                        <h3 className="text-2xl font-black uppercase tracking-widest text-white">Paused</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             };
