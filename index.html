@@ -171,7 +171,8 @@
                     Loader2: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`,
                     RefreshCcw: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>`,
                     Settings: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
-                    Lock: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
+                    Lock: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+                    Calendar: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`
                 };
                 setSvgHtml(icons[name] || '');
             }, [name, size, className, color]);
@@ -228,35 +229,27 @@
             }
         };
 
-        // --- SENSOR FUSION ENGINE (Strict GPS Logic) ---
+        // --- SENSOR FUSION ENGINE (Production-Level Real-Time Tracking) --- // FIXED: Accurate Haversine accumulation
         class GPSEngine {
             constructor() {
-                this.pointBuffer = [];
                 this.lastValidPoint = null;
                 this.totalDistance = 0; // meters
                 this.lastTime = 0;
                 this.lowSpeedDuration = 0;
+                this.consecutiveGoodAccuracyCount = 0;
+                this.isLocked = false;
             }
 
             haversine(lat1, lon1, lat2, lon2) {
-                const R = 6371e3;
+                const R = 6371e3; // Earth radius in meters
                 const dLat = (lat2 - lat1) * Math.PI / 180;
                 const dLon = (lon2 - lon1) * Math.PI / 180;
                 const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
                 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
 
-            getMovingAverage(newPoint) {
-                this.pointBuffer.push(newPoint);
-                if (this.pointBuffer.length > 5) this.pointBuffer.shift();
-                const sumLat = this.pointBuffer.reduce((sum, p) => sum + p.lat, 0);
-                const sumLng = this.pointBuffer.reduce((sum, p) => sum + p.lng, 0);
-                return { lat: sumLat / this.pointBuffer.length, lng: sumLng / this.pointBuffer.length, timestamp: newPoint.timestamp };
-            }
-
             pause() {
                 this.lastValidPoint = null;
-                this.pointBuffer = [];
                 this.lowSpeedDuration = 0;
             }
 
@@ -264,43 +257,56 @@
                 const { latitude, longitude, accuracy } = rawPoint.coords;
                 const timestamp = rawPoint.timestamp || Date.now();
 
-                if (accuracy > 20) return { status: 'LOW_ACCURACY', distance: this.totalDistance };
+                // 1. Accuracy Filter (Accept positions <= 50m)
+                if (accuracy > 50) return { status: 'LOW_ACCURACY', distance: this.totalDistance, accuracy };
 
-                const smoothedPoint = this.getMovingAverage({lat: latitude, lng: longitude, timestamp});
-
-                if (!this.lastValidPoint) {
-                    this.lastValidPoint = smoothedPoint;
-                    this.lastTime = timestamp;
-                    return { status: 'INIT', distance: this.totalDistance, point: smoothedPoint };
+                // 2. GPS Lock System (Wait for 3 consecutive readings <= 30m)
+                if (!this.isLocked) {
+                    if (accuracy <= 30) {
+                        this.consecutiveGoodAccuracyCount++;
+                        if (this.consecutiveGoodAccuracyCount >= 3) {
+                            this.isLocked = true;
+                            this.lastValidPoint = { lat: latitude, lng: longitude };
+                            this.lastTime = timestamp;
+                            return { status: 'LOCKED', distance: this.totalDistance, accuracy };
+                        }
+                    } else {
+                        this.consecutiveGoodAccuracyCount = 0;
+                    }
+                    return { status: 'LOCKING', distance: this.totalDistance, accuracy };
                 }
 
+                // 3. Time Difference
                 const dt = (timestamp - this.lastTime) / 1000; 
-                if (dt <= 0) return { status: 'INVALID_TIME', distance: this.totalDistance };
+                if (dt <= 0) return { status: 'INVALID_TIME', distance: this.totalDistance, accuracy };
 
-                const dist = this.haversine(this.lastValidPoint.lat, this.lastValidPoint.lng, smoothedPoint.lat, smoothedPoint.lng);
+                // 4. Distance Calculation (Haversine)
+                const dist = this.haversine(this.lastValidPoint.lat, this.lastValidPoint.lng, latitude, longitude);
 
-                if (dist > 50 && dt < 2) return { status: 'JUMP', distance: this.totalDistance };
-                if (dist < 3) return { status: 'NOISE', distance: this.totalDistance };
-
+                // 5. Noise and Jump Filtering
                 const speedMs = dist / dt;
+                
+                // Ignore points where speed > 8 m/s (GPS jump filter for runners)
+                if (speedMs > 8) return { status: 'JUMP', distance: this.totalDistance, accuracy };
+                
+                // Ignore distance < 2 meters (noise filter)
+                if (dist < 2) {
+                     // Check for Auto-Pause (Speed < 1 km/h for 8 seconds)
+                     this.lowSpeedDuration += dt;
+                     if (this.lowSpeedDuration >= 8) {
+                         return { status: 'AUTO_PAUSED', distance: this.totalDistance, accuracy, speed: 0 };
+                     }
+                     return { status: 'NOISE', distance: this.totalDistance, accuracy };
+                }
+
+                // 6. Valid Movement
+                this.totalDistance += dist;
+                this.lastValidPoint = { lat: latitude, lng: longitude };
+                this.lastTime = timestamp;
+                this.lowSpeedDuration = 0;
+
                 const speedKmh = speedMs * 3.6;
-                if (speedMs > 6) return { status: 'TOO_FAST', distance: this.totalDistance };
-
-                let isAutoPaused = false;
-                if (speedKmh < 1) {
-                    this.lowSpeedDuration += dt;
-                    if (this.lowSpeedDuration >= 5) isAutoPaused = true;
-                } else {
-                    this.lowSpeedDuration = 0;
-                }
-
-                if (!isAutoPaused) {
-                    this.totalDistance += dist;
-                    this.lastValidPoint = smoothedPoint;
-                    this.lastTime = timestamp;
-                }
-
-                return { status: isAutoPaused ? 'AUTO_PAUSED' : 'MOVING', distance: this.totalDistance, point: smoothedPoint, speed: speedKmh };
+                return { status: 'MOVING', distance: this.totalDistance, accuracy, speed: speedKmh };
             }
         }
 
@@ -308,9 +314,7 @@
             // Global State
             const [view, setView] = useState('splash');
             const [userData, setUserData] = useState(null);
-            const [runs, setRuns] = useState([]);
-            
-            // Hovered up vibe state to root to prevent Hook remounting crashes
+            const [runs, setRuns] = useState([]); // FIXED: Stores run history
             const [vibe, setVibe] = useState("");
 
             // UI Render State
@@ -321,6 +325,7 @@
             const [distance, setDistance] = useState(0); 
             const [currentSpeed, setCurrentSpeed] = useState(0); 
             const [accuracy, setAccuracy] = useState(0);
+            const [gpsStatus, setGpsStatus] = useState("WAITING");
             const [lastSummary, setLastSummary] = useState(null);
 
             // AI States
@@ -332,24 +337,24 @@
             const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
 
             // Tracking Refs (Source of Truth for Stable Timer)
-            const runDataRef = useRef({ startTime: 0, totalPausedTime: 0, pauseStartTime: 0, distance: 0, speed: 0, accuracy: 0, lastUiUpdate: 0 });
+            const runDataRef = useRef({ startTime: 0, totalPausedTime: 0, pauseStartTime: 0, distance: 0, speed: 0, lastUiUpdate: 0 });
             const rAFRef = useRef(null);
             const watchRef = useRef(null);
             const gpsEngineRef = useRef(new GPSEngine());
             
             const isPausedRef = useRef(false);
-            const autoPausedRef = useRef(false);
             useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
-            useEffect(() => { autoPausedRef.current = autoPaused; }, [autoPaused]);
 
-            // Startup & User Loading
-            // CHANGED: Added try-catch around localStorage to prevent fatal crashes if access is blocked
+            // Startup & User Loading // FIXED: Load saved runs from local storage
             useEffect(() => {
                 const timer = setTimeout(() => {
                     try {
-                        const saved = localStorage.getItem('runo_user');
-                        if (saved) {
-                            setUserData(JSON.parse(saved));
+                        const savedUser = localStorage.getItem('runo_user');
+                        const savedRuns = localStorage.getItem('runo_history');
+                        
+                        if (savedUser) {
+                            setUserData(JSON.parse(savedUser));
+                            if (savedRuns) setRuns(JSON.parse(savedRuns));
                             setView('home');
                         } else {
                             setView('onboarding');
@@ -379,51 +384,123 @@
                 const now = Date.now();
                 if (now - runDataRef.current.lastUiUpdate >= 500) {
                     let elapsedMs = 0;
-                    if (isPausedRef.current || autoPausedRef.current) {
+                    if (isPausedRef.current) {
                         elapsedMs = runDataRef.current.pauseStartTime - runDataRef.current.startTime - runDataRef.current.totalPausedTime;
                     } else {
                         elapsedMs = now - runDataRef.current.startTime - runDataRef.current.totalPausedTime;
                     }
+                    
                     setElapsed(Math.max(0, Math.floor(elapsedMs / 1000)));
                     setDistance(runDataRef.current.distance);
                     setCurrentSpeed(runDataRef.current.speed);
-                    setAccuracy(runDataRef.current.accuracy);
                     runDataRef.current.lastUiUpdate = now;
                 }
                 rAFRef.current = requestAnimationFrame(updateUI);
             }, []);
 
             const startRun = () => {
-                setIsRunning(true); setIsPaused(false); setAutoPaused(false); setLastSummary(null); setAiAnalysis(null);
-                setDistance(0); setElapsed(0); setCurrentSpeed(0);
+                setIsRunning(true); 
+                setIsPaused(false); 
+                setAutoPaused(false); 
+                setLastSummary(null); 
+                setAiAnalysis(null);
+                setDistance(0); 
+                setElapsed(0); 
+                setCurrentSpeed(0);
+                setGpsStatus("WAITING");
+
                 gpsEngineRef.current = new GPSEngine();
-                runDataRef.current = { startTime: Date.now(), totalPausedTime: 0, pauseStartTime: 0, distance: 0, speed: 0, accuracy: 0, lastUiUpdate: 0 };
+                runDataRef.current = { 
+                    startTime: Date.now(), 
+                    totalPausedTime: 0, 
+                    pauseStartTime: 0, 
+                    distance: 0, 
+                    speed: 0, 
+                    lastUiUpdate: 0 
+                };
 
                 if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
                 rAFRef.current = requestAnimationFrame(updateUI);
                 
                 if (navigator.geolocation) {
                     watchRef.current = navigator.geolocation.watchPosition((p) => {
-                        runDataRef.current.accuracy = p.coords.accuracy;
+                        setAccuracy(p.coords.accuracy);
+                        
                         if (isPausedRef.current) return; 
 
                         const result = gpsEngineRef.current.processPoint(p);
-                        if (result.status === 'MOVING') {
-                            if (autoPausedRef.current) {
-                                setAutoPaused(false);
-                                runDataRef.current.totalPausedTime += (Date.now() - runDataRef.current.pauseStartTime);
-                            }
+                        
+                        if (result.status === 'LOCKING' || result.status === 'LOW_ACCURACY') {
+                            setGpsStatus("WAITING");
+                            return;
+                        }
+
+                        setGpsStatus("RECORDING");
+
+                        if (result.status === 'MOVING' || result.status === 'LOCKED') {
+                            if (autoPaused) setAutoPaused(false);
                             runDataRef.current.distance = result.distance;
                             runDataRef.current.speed = result.speed || 0;
                         } else if (result.status === 'AUTO_PAUSED') {
-                            if (!autoPausedRef.current) {
+                            if (!autoPaused) {
                                 setAutoPaused(true);
-                                runDataRef.current.pauseStartTime = Date.now();
                                 runDataRef.current.speed = 0;
                             }
                         }
-                    }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+                    }, (err) => {
+                        setGpsStatus("ERROR");
+                    }, { 
+                        enableHighAccuracy: true, 
+                        maximumAge: 0, 
+                        timeout: 5000 
+                    });
                 }
+            };
+
+            const stopRun = () => { // FIXED: Implementation of Save Feature with prompt
+                if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
+                if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
+                
+                const finalDistance = runDataRef.current.distance;
+                const now = Date.now();
+                let elapsedMs = isPausedRef.current ? 
+                    (runDataRef.current.pauseStartTime - runDataRef.current.startTime - runDataRef.current.totalPausedTime) : 
+                    (now - runDataRef.current.startTime - runDataRef.current.totalPausedTime);
+                
+                const finalElapsed = Math.max(0, Math.floor(elapsedMs / 1000));
+                const finalDistanceKm = finalDistance / 1000;
+                const paceString = formatPace(finalElapsed, finalDistance);
+
+                // FIXED: Persistence Logic - Persist to local storage
+                if (finalDistance > 10) { 
+                    const runName = prompt("Session complete! Enter a name for this run:", `Run ${new Date().toLocaleDateString()}`);
+                    const summary = { 
+                        id: Date.now(), 
+                        name: runName || "Morning Session",
+                        timestamp: Date.now(), 
+                        duration: finalElapsed, 
+                        distance: finalDistance, 
+                        pace: paceString 
+                    };
+                    
+                    setLastSummary(summary);
+                    
+                    const updatedRuns = [summary, ...runs];
+                    setRuns(updatedRuns);
+                    localStorage.setItem('runo_history', JSON.stringify(updatedRuns));
+
+                    const updatedUser = { 
+                        ...userData, 
+                        streak: (userData?.streak || 0) + 1, 
+                        totalKm: (userData?.totalKm || 0) + finalDistanceKm 
+                    };
+                    setUserData(updatedUser);
+                    localStorage.setItem('runo_user', JSON.stringify(updatedUser));
+                } else {
+                    setLastSummary({ distance: 0, duration: 0, pace: "0:00" });
+                }
+                
+                setIsRunning(false);
             };
 
             const togglePause = () => {
@@ -437,28 +514,6 @@
                     setAutoPaused(false);
                     runDataRef.current.totalPausedTime += (Date.now() - runDataRef.current.pauseStartTime);
                 }
-            };
-
-            const stopRun = () => {
-                if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
-                if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
-                
-                const finalDistanceKm = runDataRef.current.distance / 1000;
-                let elapsedMs = (isPausedRef.current || autoPausedRef.current) ? 
-                    (runDataRef.current.pauseStartTime - runDataRef.current.startTime - runDataRef.current.totalPausedTime) : 
-                    (Date.now() - runDataRef.current.startTime - runDataRef.current.totalPausedTime);
-                const finalElapsed = Math.max(0, Math.floor(elapsedMs / 1000));
-                
-                const summary = { id: Date.now(), timestamp: Date.now(), duration: finalElapsed, distance: runDataRef.current.distance, pace: finalDistanceKm > 0 ? finalElapsed / finalDistanceKm : 0 };
-                setLastSummary(summary);
-                
-                if (runDataRef.current.distance > 10) { 
-                    setRuns(prev => [summary, ...prev]);
-                    const updatedUser = { ...userData, streak: (userData?.streak || 0) + 1, totalKm: (userData?.totalKm || 0) + finalDistanceKm };
-                    setUserData(updatedUser);
-                    try { localStorage.setItem('runo_user', JSON.stringify(updatedUser)); } catch(e){}
-                }
-                setIsRunning(false);
             };
 
             // Formatting Functions
@@ -561,7 +616,7 @@
                         </div>
                     </div>
 
-                    {/* VIBRANT Blue Target Card (Exact match to screenshot) */}
+                    {/* VIBRANT Blue Target Card */}
                     <div className="relative bg-blue-600 rounded-[2.5rem] p-8 text-white mb-8 fitness-card overflow-hidden">
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-4">
@@ -569,14 +624,13 @@
                                 <p className="text-xs font-black uppercase tracking-widest text-blue-100">Today's Mission</p>
                             </div>
                             <h2 className="text-7xl font-black tracking-tighter mb-8 text-white">2.5 <span className="text-3xl font-bold opacity-80">KM</span></h2>
-                            <button onClick={() => { setDistance(0); setElapsed(0); setLastSummary(null); setView('run'); }} className="w-full py-5 bg-slate-900 text-white rounded-xl font-black text-lg border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] active:translate-y-1 active:shadow-[2px_3px_0px_#0f172a] transition-all uppercase tracking-widest">
+                            <button onClick={() => { setView('run'); startRun(); }} className="w-full py-5 bg-slate-900 text-white rounded-xl font-black text-lg border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] active:translate-y-1 active:shadow-[2px_3px_0px_#0f172a] transition-all uppercase tracking-widest">
                                 START RUN
                             </button>
                         </div>
                         <Icon name="Navigation" size={200} color="rgba(255,255,255,0.1)" className="absolute -right-5 -bottom-5 pointer-events-none" />
                     </div>
 
-                    {/* Exact Color Matches for Grid Cards */}
                     <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="p-6 bg-slate-900 rounded-[2rem] fitness-card">
                             <Icon name="TrendingUp" size={32} color="#60a5fa" className="mb-4" />
@@ -592,9 +646,9 @@
                 </div>
             );
 
-            const Stats = () => {
+            const Stats = () => { // FIXED: Added Recent Activity List
                 return (
-                    <div className="absolute inset-0 px-6 pt-6 overflow-y-auto custom-scroll animate__animated animate__fadeIn w-full h-full">
+                    <div className="absolute inset-0 px-6 pt-6 overflow-y-auto custom-scroll animate__animated animate__fadeIn w-full h-full pb-32">
                         <IndianClock />
                         <header className="mb-8 mt-4">
                             <p className="text-xs font-black uppercase tracking-widest text-slate-500">AI Personal Training & Stats</p>
@@ -652,15 +706,48 @@
                                 ))}
                             </div>
                         </div>
+
+                        {/* ADDED: Session History List */}
+                        <div className="mb-8">
+                            <h3 className="font-black text-xl mb-6 uppercase text-slate-900 flex items-center gap-2">
+                                <Icon name="BarChart2" size={20} color="#0f172a"/> Recent Activity
+                            </h3>
+                            <div className="space-y-4">
+                                {runs.length > 0 ? runs.slice(0, 5).map(run => (
+                                    <div key={run.id} className="p-6 bg-white rounded-[2rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex justify-between items-center">
+                                        <div>
+                                            <p className="font-black text-slate-900 uppercase text-sm tracking-tight">{run.name}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Icon name="Calendar" size={12} color="#64748b"/>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase">{new Date(run.timestamp).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-black text-blue-600 text-lg leading-none">
+                                                {run.distance < 1000 ? `${Math.floor(run.distance)}m` : `${(run.distance / 1000).toFixed(2)}km`}
+                                            </p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase mt-1">{run.pace}/km</p>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="p-8 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-300">
+                                        <p className="text-slate-400 font-bold text-sm">No recorded missions yet.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 );
             };
 
-            const Run = () => {
+            const Run = () => { // FIXED: Distance Unit Logic (m vs km)
                 const circ = 2 * Math.PI * 130; 
-                const offset = circ - (Math.min(100, (distance / 5000) * 100) / 100) * circ;
+                
+                // Active Running Screen Logic
+                const displayDistance = distance < 1000 ? Math.floor(distance) : (distance / 1000).toFixed(2);
+                const displayUnit = distance < 1000 ? "Meters" : "Kilometers";
 
-                // Post-Run Summary (Fixed inset-0 so no jumping occurs)
+                // Post-Run Summary View
                 if (lastSummary && !isRunning) {
                     return (
                         <div className="absolute inset-0 z-[60] bg-slate-100 text-slate-900 p-8 flex flex-col justify-between overflow-hidden animate__animated animate__fadeIn w-full h-full">
@@ -671,7 +758,9 @@
                                 <div className="grid grid-cols-2 gap-4 mb-8">
                                     <div className="p-6 bg-slate-900 text-white rounded-[2rem] fitness-card">
                                         <p className="text-[10px] font-black text-blue-400 uppercase mb-2 tracking-widest">Total Distance</p>
-                                        <p className="text-4xl font-black tracking-tighter">{(lastSummary.distance/1000).toFixed(2)}<span className="text-lg text-slate-400">km</span></p>
+                                        <p className="text-4xl font-black tracking-tighter">
+                                            {lastSummary.distance < 1000 ? `${Math.floor(lastSummary.distance)}m` : `${(lastSummary.distance/1000).toFixed(2)}km`}
+                                        </p>
                                     </div>
                                     <div className="p-6 bg-blue-50 rounded-[2rem] fitness-card">
                                         <p className="text-[10px] font-black text-blue-600 uppercase mb-2 tracking-widest">Total Time</p>
@@ -681,7 +770,7 @@
                                 <div className="grid grid-cols-2 gap-4 mb-8">
                                     <div className="p-6 bg-white rounded-[2.5rem] fitness-card">
                                         <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Avg Pace</p>
-                                        <p className="text-2xl font-black text-slate-900">{formatPace(lastSummary.duration, lastSummary.distance)}<span className="text-xs text-slate-500">/km</span></p>
+                                        <p className="text-2xl font-black text-slate-900">{lastSummary.pace}<span className="text-xs text-slate-500">/km</span></p>
                                     </div>
                                     <div className="p-6 bg-white rounded-[2.5rem] fitness-card">
                                         <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Calories</p>
@@ -689,7 +778,6 @@
                                     </div>
                                 </div>
 
-                                {/* ✨ AI Analysis Section */}
                                 <div className="mb-6">
                                     <button 
                                         onClick={fetchAnalysis} 
@@ -714,24 +802,23 @@
                     );
                 }
 
-                // Active Running Screen (Fixed layout prevents ANY jumping)
+                // Active Running Screen View
                 return (
                     <div className="absolute inset-0 z-[60] bg-slate-900 text-white flex flex-col justify-between animate__animated animate__slideInUp overflow-hidden overscroll-none w-full h-full">
-                        
-                        {/* High-Tech Grid Background */}
                         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#334155 1.5px, transparent 1.5px)', backgroundSize: '24px 24px', opacity: 0.3 }}></div>
 
                         <header className="relative flex justify-between items-center z-10 p-8 pb-0 pt-12">
                             <button onClick={() => !isRunning && setView('home')} className="text-slate-400 font-bold text-xs uppercase hover:text-white transition-colors">{!isRunning ? "Cancel" : ""}</button>
                             <div className="flex items-center gap-3 bg-slate-800 px-5 py-2.5 rounded-full border-2 border-slate-700">
-                                <div className={`w-3 h-3 rounded-full ${autoPaused ? 'bg-orange-500' : (isRunning && !isPaused ? 'bg-blue-500 animate-pulse' : 'bg-orange-500')}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{autoPaused ? "AUTO-PAUSED" : (isRunning ? "RECORDING" : "READY")}</span>
+                                <div className={`w-3 h-3 rounded-full ${gpsStatus === 'WAITING' ? 'bg-orange-500 animate-pulse' : (autoPaused ? 'bg-orange-500' : 'bg-blue-500 animate-pulse')}`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    {gpsStatus === 'WAITING' ? "WAITING FOR GPS..." : (autoPaused ? "AUTO-PAUSED" : "RECORDING")}
+                                </span>
                             </div>
                             <div className="text-[10px] font-black text-slate-500 uppercase">{accuracy > 0 && accuracy <= 20 ? `GPS: OK` : (accuracy > 20 ? `GPS: POOR` : '...')}</div>
                         </header>
                         
                         <div className="relative flex-1 flex flex-col items-center justify-center w-full px-4">
-                            {/* NEW HIGH GRAPHIC TIME RING */}
                             <div className="relative flex items-center justify-center mb-8 w-14 h-14">
                                 <svg className="absolute w-16 h-16 -rotate-90 pointer-events-none opacity-80">
                                     <circle cx="32" cy="32" r="28" stroke="#171717" strokeWidth="4" fill="transparent" />
@@ -748,15 +835,18 @@
                                     <circle cx="50%" cy="50%" r="130" stroke="#ffffff" strokeWidth="12" fill="transparent" strokeDasharray={2 * Math.PI * 130} style={{ strokeDashoffset: 2 * Math.PI * 130 - (Math.min(100, (distance / 5000) * 100) / 100) * (2 * Math.PI * 130) }} strokeLinecap="round" className="progress-ring-circle drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
                                 </svg>
                                 <div className="z-10 text-center animate__animated animate__zoomIn">
-                                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2">Distance</p>
-                                    <h1 className="text-[80px] sm:text-[100px] font-black leading-none tracking-tighter tabular-nums text-white text-glow">{(distance / 1000).toFixed(2)}</h1>
-                                    <p className="text-lg font-bold text-neutral-400 uppercase tracking-widest mt-1">Kilometers</p>
+                                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2">Primary Stat</p>
+                                    {/* FIXED: Dynamic Distance units */}
+                                    <h1 className="text-[80px] sm:text-[100px] font-black leading-none tracking-tighter tabular-nums text-white text-glow">
+                                        {displayDistance}
+                                    </h1>
+                                    <p className="text-lg font-bold text-neutral-400 uppercase tracking-widest mt-1">
+                                        {displayUnit}
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* Upgraded Stats Display */}
                             <div className="grid grid-cols-3 gap-3 w-full max-w-md z-10 mt-4 px-2">
-                                {/* Elevated Time Display with Pulsing Background and Glow */}
                                 <div className="bg-slate-800 p-4 rounded-[1.5rem] border-2 border-slate-700 text-center relative overflow-hidden flex flex-col items-center justify-center shadow-lg">
                                     <div className={`absolute inset-0 bg-blue-500/20 transition-opacity duration-500 ${elapsed % 2 === 0 ? 'opacity-100' : 'opacity-0'}`}></div>
                                     <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1 relative z-10">Time</p>
@@ -778,15 +868,7 @@
                                 <button onClick={startRun} className="w-24 h-24 bg-white text-black rounded-full flex items-center justify-center active:scale-95 transition-transform"><Icon name="Play" size={40} color="black" /></button>
                             ) : (
                                 <>
-                                    <button onClick={() => {
-                                        if (!isPaused) {
-                                            setIsPaused(true);
-                                            gpsEngineRef.current.pause(); 
-                                        } else {
-                                            setIsPaused(false);
-                                            setAutoPaused(false);
-                                        }
-                                    }} className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center border border-neutral-700 active:scale-95 transition-all">
+                                    <button onClick={togglePause} className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center border border-neutral-700 active:scale-95 transition-all">
                                         {isPaused ? <Icon name="Play" size={24} color="white"/> : <Icon name="Pause" size={24} color="white"/>}
                                     </button>
                                     <button onClick={stopRun} className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.4)] active:scale-95 transition-transform"><Icon name="Square" size={36} color="white" /></button>
@@ -801,7 +883,6 @@
                 <div className="absolute inset-0 px-8 pt-6 overflow-y-auto custom-scroll animate__animated animate__fadeIn w-full h-full">
                     <IndianClock />
                     <div className="flex flex-col items-center mb-10 mt-8">
-                        {/* Profile Picture Upload Container */}
                         <label className="relative block w-36 h-36 rounded-[2.5rem] bg-white flex items-center justify-center mb-6 fitness-card cursor-pointer overflow-hidden profile-pic-container">
                             {userData?.profilePic ? (
                                 <img src={userData.profilePic} alt="Profile" className="w-full h-full object-cover" />
@@ -832,7 +913,6 @@
                             <Icon name="ChevronRight" size={24} color="#0f172a" />
                         </div>
                         
-                        {/* High-Visibility Red Support Box */}
                         <a href="mailto:farmanshafi2007@gmail.com?subject=Runo Elite Support Request" className="p-8 bg-red-500 text-white rounded-[2rem] flex justify-between items-center cursor-pointer fitness-card active:translate-y-1 active:shadow-[2px_3px_0px_#0f172a] transition-all block no-underline">
                             <div className="flex items-center gap-5">
                                 <div className="w-12 h-12 bg-red-700 rounded-xl flex items-center justify-center border border-red-400">
@@ -846,14 +926,15 @@
                             <Icon name="ChevronRight" size={24} color="white" />
                         </a>
 
-                        <div className="p-8 bg-white rounded-[2rem] flex justify-between items-center opacity-70 fitness-card">
+                        {/* FIXED: Clear Data Logic */}
+                        <div onClick={() => { if(confirm("Are you sure? This clears your history.")) { localStorage.clear(); location.reload(); }}} className="p-8 bg-white rounded-[2rem] flex justify-between items-center fitness-card active:translate-y-1">
                             <div className="flex items-center gap-5">
                                 <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center border border-slate-200">
                                     <Icon name="Settings" size={24} color="#64748b" />
                                 </div>
-                                <p className="font-black text-lg text-gray-600 uppercase">Settings</p>
+                                <p className="font-black text-lg text-gray-600 uppercase">Clear All Data</p>
                             </div>
-                            <Icon name="Lock" size={20} color="#94a3b8" />
+                            <Icon name="RefreshCcw" size={20} color="#94a3b8" />
                         </div>
                     </div>
                 </div>
@@ -887,16 +968,15 @@
                 </div>
             );
 
-            // Nav Configuration - Exactly matching screenshot logic (3 icons on bottom)
+            // Nav Configuration
             const navItems = [
-                { id: 'home', icon: 'HomeSolid', label: 'HOME', activeColor: '#3b82f6' }, 
-                { id: 'stats', icon: 'BarChart2', label: 'STATS', activeColor: '#a855f7' }, 
-                { id: 'profile', icon: 'User', label: 'PROFILE', activeColor: '#22c55e' } 
+                { id: 'home', icon: 'HomeSolid', label: 'HOME' }, 
+                { id: 'stats', icon: 'BarChart2', label: 'STATS' }, 
+                { id: 'profile', icon: 'User', label: 'PROFILE' } 
             ];
 
             return (
                 <div className="fixed inset-0 w-full h-full bg-slate-100 overflow-hidden">
-                    {/* CHANGED: Removed 'relative' class from this container. 'relative' and 'fixed' conflict in Tailwind and were causing the main screen height to drop to 0px, hiding everything except the fixed bottom navigation. */}
                     {view === 'splash' && Splash()}
                     {view === 'home' && Home()}
                     {view === 'stats' && Stats()}
@@ -905,7 +985,7 @@
                     {view === 'privacy' && Privacy()}
                     {view === 'onboarding' && Onboarding()}
 
-                    {/* FIXED BOTTOM NAVIGATION - EXACTLY MATCHING SCREENSHOT */}
+                    {/* FIXED BOTTOM NAVIGATION */}
                     {['home', 'profile', 'stats'].includes(view) && (
                         <div className="nav-dock-container pointer-events-none">
                             <nav className="nav-pill pointer-events-auto mx-auto w-[85%] max-w-[350px]">
