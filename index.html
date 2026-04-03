@@ -259,6 +259,8 @@
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // NEW CLOUD IMPORTS ADDED WITHOUT REMOVING ANY FEATURES
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -275,6 +277,9 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        // REAL-TIME FIRESTORE DATABASE INITIALIZATION
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'runo-default';
 
         // --- ICONS ---
         const Icon = ({ name, size = 24, className = "", color = "currentColor" }) => {
@@ -533,8 +538,12 @@
                 }
 
                 const timer = setTimeout(() => {
+                    let unsubscribeRuns = () => {};
+
                     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
                         setIsAuthLoading(false); // Reset loading state when auth state resolves
+                        unsubscribeRuns(); // Ensure we clear any previous firestore listeners if user switches accounts
+                        
                         if (firebaseUser) {
                             // Check if email is verified (DISABLED AS REQUESTED)
                             // if (!firebaseUser.emailVerified) {
@@ -565,28 +574,63 @@
                                 const savedUser = localStorage.getItem('runo_user_' + firebaseUser.uid);
                                 const savedRuns = localStorage.getItem('runo_history_' + firebaseUser.uid);
                                 
-                                if (savedUser) {
-                                    setUserData(JSON.parse(savedUser));
-                                } else {
-                                    // Pull in dynamic values from Firebase Auth if available (like Google Sign In Name/Photo)
-                                    const newUser = { 
-                                        name: firebaseUser.displayName || "Athlete", 
-                                        streak: 0, 
-                                        totalKm: 0, 
-                                        shields: 1, 
-                                        joined: Date.now(), 
-                                        profilePic: firebaseUser.photoURL || null, 
-                                        uid: firebaseUser.uid 
-                                    };
-                                    setUserData(newUser);
-                                    localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(newUser));
-                                }
+                                // ---- NEW FIRESTORE SYNC CODE (REAL-TIME ISOLATION) ----
+                                const userDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'data');
+                                getDoc(userDocRef).then((docSnap) => {
+                                    if (docSnap.exists()) {
+                                        const remoteUserData = docSnap.data();
+                                        setUserData(remoteUserData);
+                                        localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(remoteUserData));
+                                    } else {
+                                        // Use existing local fallback/creation
+                                        let newUser;
+                                        if (savedUser) {
+                                            newUser = JSON.parse(savedUser);
+                                        } else {
+                                            newUser = { 
+                                                name: firebaseUser.displayName || "Athlete", 
+                                                streak: 0, 
+                                                totalKm: 0, 
+                                                shields: 1, 
+                                                joined: Date.now(), 
+                                                profilePic: firebaseUser.photoURL || null, 
+                                                uid: firebaseUser.uid 
+                                            };
+                                        }
+                                        setUserData(newUser);
+                                        localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(newUser));
+                                        setDoc(userDocRef, newUser).catch(err => console.error(err)); // Create in Firestore
+                                    }
+                                }).catch(err => {
+                                    console.error("Firestore user error", err);
+                                    // Fallback to local if offline
+                                    if (savedUser) setUserData(JSON.parse(savedUser));
+                                });
+
+                                const runsColRef = collection(db, 'artifacts', appId, 'users', firebaseUser.uid, 'runs');
+                                const localRuns = savedRuns ? JSON.parse(savedRuns) : [];
                                 
-                                if (savedRuns) {
-                                    setRuns(JSON.parse(savedRuns));
-                                } else {
-                                    setRuns([]); // Reset runs for new user to prevent data bleed
-                                }
+                                unsubscribeRuns = onSnapshot(runsColRef, (snapshot) => {
+                                    const remoteRuns = [];
+                                    snapshot.forEach(d => remoteRuns.push(d.data()));
+                                    
+                                    // Merge missing local runs to Firestore (Prevents data loss on first sync)
+                                    const remoteIds = new Set(remoteRuns.map(r => String(r.id)));
+                                    localRuns.forEach(lr => {
+                                        if (!remoteIds.has(String(lr.id))) {
+                                            setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'runs', String(lr.id)), lr).catch(e => console.error(e));
+                                            remoteRuns.push(lr);
+                                        }
+                                    });
+
+                                    remoteRuns.sort((a, b) => b.timestamp - a.timestamp);
+                                    setRuns(remoteRuns);
+                                    localStorage.setItem('runo_history_' + firebaseUser.uid, JSON.stringify(remoteRuns));
+                                }, (err) => {
+                                    console.error("Firestore runs error", err);
+                                    setRuns(localRuns);
+                                });
+                                // ---- END FIRESTORE SYNC CODE ----
                                 
                                 // FIX: Only transition to home if we are coming from initial splash or onboarding
                                 setView((currentView) => {
@@ -608,7 +652,10 @@
                         }
                     });
 
-                    return () => unsubscribe();
+                    return () => {
+                        unsubscribe();
+                        unsubscribeRuns();
+                    };
                 }, 1500);
                 
                 return () => clearTimeout(timer);
@@ -624,7 +671,13 @@
                         try { 
                             localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser)); 
                             
-                            // Also try to save it to Firebase Auth to persist across completely fresh devices!
+                            // ---- NEW FIRESTORE SYNC ----
+                            if (userData && userData.uid) {
+                                const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
+                                await setDoc(userDocRef, updatedUser);
+                            }
+                            // ---- END NEW FIRESTORE SYNC ----
+
                             if (auth.currentUser) {
                                 await updateProfile(auth.currentUser, { photoURL: reader.result });
                             }
@@ -783,7 +836,7 @@
             };
 
             // Triggered after user enters a mandatory run name
-            const saveCompletedRun = (runName) => {
+            const saveCompletedRun = async (runName) => {
                 const summary = { ...pendingRun, name: runName };
                 setLastSummary(summary);
                 
@@ -799,6 +852,18 @@
                 };
                 setUserData(updatedUser);
                 localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser));
+
+                // ---- NEW FIRESTORE SYNC ----
+                if (userData && userData.uid) {
+                    try {
+                        const runDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'runs', String(summary.id));
+                        await setDoc(runDocRef, summary);
+                        const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
+                        await setDoc(userDocRef, updatedUser);
+                    } catch(e) { console.error("Sync error:", e); }
+                }
+                // ---- END NEW FIRESTORE SYNC ----
+
                 setPendingRun(null);
                 setView('post_save_share'); // Proceed to new share screen
             };
@@ -808,10 +873,17 @@
                 setModalData({
                     title: 'Delete Mission?',
                     message: 'Permanently delete this mission from your records? This action cannot be undone.',
-                    onConfirm: () => {
+                    onConfirm: async () => {
                         const newRuns = runs.filter(r => r.id !== id);
                         setRuns(newRuns);
                         localStorage.setItem('runo_history_' + userData.uid, JSON.stringify(newRuns));
+                        // ---- NEW FIRESTORE SYNC ----
+                        if (userData && userData.uid) {
+                            try {
+                                await deleteDoc(doc(db, 'artifacts', appId, 'users', userData.uid, 'runs', String(id)));
+                            } catch(e) { console.error("Sync error:", e); }
+                        }
+                        // ---- END NEW FIRESTORE SYNC ----
                     },
                     onCancel: () => {},
                     confirmText: 'Delete',
@@ -909,7 +981,7 @@
                     onConfirm: async () => { 
                         try {
                             setUserData(null); // Clear sensitive data from memory securely
-                            setRuns([]); // Clear run history from memory
+                            setRuns([]); // Clear run history from memory securely
                             await signOut(auth);
                             setView('onboarding'); 
                         } catch (error) {
