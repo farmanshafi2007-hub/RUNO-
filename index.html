@@ -140,7 +140,7 @@
             opacity: 1;
         }
 
-        /* Enhanced Realistic Water Animation */
+        /* CHANGED: Enhanced Realistic Water Animation */
         .water-container {
             position: absolute;
             bottom: 0;
@@ -190,13 +190,13 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Dark White Border Override */
+        /* ADDED: Dark White Border Override */
         .premium-mission-border {
             border: 2.5px solid #e2e8f0 !important;
             box-shadow: 4px 6px 0px #94a3b8 !important;
         }
 
-        /* HIGH ENERGY RUN SCREEN STYLES */
+        /* NEW: HIGH ENERGY RUN SCREEN STYLES */
         .bg-grid {
             background-size: 40px 40px;
             background-image: 
@@ -256,34 +256,8 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // FIRESTORE CLOUD IMPORTS
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // FIREBASE STORAGE IMPORTS (ADDED FOR PROFILE IMAGES)
-        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-
+    <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBnUEGt2dbDTLlfVsH_3M-5R61DoNkAook",
-          authDomain: "runo-f65fa.firebaseapp.com",
-          projectId: "runo-f65fa",
-          storageBucket: "runo-f65fa.firebasestorage.app",
-          messagingSenderId: "219671379871",
-          appId: "1:219671379871:web:74d2d066b8cc12ed03c7aa"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        
-        // REAL-TIME FIRESTORE & STORAGE INITIALIZATION
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'runo-default';
 
         // --- ICONS ---
         const Icon = ({ name, size = 24, className = "", color = "currentColor" }) => {
@@ -313,17 +287,7 @@
                     Lock: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
                     Calendar: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
                     Timer: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
-                    Wind: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>`,
-                    Share2: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`,
-                    Trash2: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
-                    Copy: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
-                    CheckCircle: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
-                    History: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>`,
-                    Archive: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`,
-                    Folder: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
-                    FileText: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
-                    Users: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
-                    Plus: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`
+                    Wind: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>`
                 };
                 setSvgHtml(icons[name] || '');
             }, [name, size, className, color]);
@@ -356,10 +320,6 @@
             );
         };
 
-        // --- ENCODING UTILITIES FOR SHARING ---
-        const encodeRunData = (run) => btoa(encodeURIComponent(JSON.stringify(run)));
-        const decodeRunData = (str) => JSON.parse(decodeURIComponent(atob(str)));
-
         // --- GEMINI API INTEGRATION ---
         const apiKey = ""; 
         const callGemini = async (prompt, systemPrompt = "You are Runo Elite AI, a high-performance fitness coach.") => {
@@ -384,7 +344,7 @@
             }
         };
 
-        // --- SENSOR FUSION ENGINE (Production-Level Real-Time Tracking) --- 
+        // --- SENSOR FUSION ENGINE (Production-Level Real-Time Tracking) --- // Improved sensitivity for real-time meters
         class GPSEngine {
             constructor() {
                 this.lastValidPoint = null;
@@ -393,7 +353,6 @@
                 this.lowSpeedDuration = 0;
                 this.consecutiveGoodAccuracyCount = 0;
                 this.isLocked = false;
-                this.stationaryCount = 0;
             }
 
             haversine(lat1, lon1, lat2, lon2) {
@@ -420,15 +379,12 @@
                 if (!this.isLocked) {
                     if (accuracy <= 40) {
                         this.consecutiveGoodAccuracyCount++;
-                        // Increased required consecutive pings to 3 to ensure stable start
-                        if (this.consecutiveGoodAccuracyCount >= 3) { 
+                        if (this.consecutiveGoodAccuracyCount >= 2) { // Locked after 2 good pings
                             this.isLocked = true;
                             this.lastValidPoint = { lat: latitude, lng: longitude };
                             this.lastTime = timestamp;
                             return { status: 'LOCKED', distance: this.totalDistance, accuracy };
                         }
-                    } else {
-                        this.consecutiveGoodAccuracyCount = 0;
                     }
                     return { status: 'LOCKING', distance: this.totalDistance, accuracy };
                 }
@@ -439,35 +395,22 @@
 
                 // 4. Distance Calculation (Haversine)
                 const dist = this.haversine(this.lastValidPoint.lat, this.lastValidPoint.lng, latitude, longitude);
-                const speedMs = dist / dt;
 
-                // --- CRITICAL GHOST DISTANCE FIX ---
-                // Stricter initial lock: Ensure we don't start accumulating ghost points when stationary at the start.
-                if (this.totalDistance === 0) {
-                    // Require sustained movement or a significant distance to break out of "0" state.
-                    // If we moved less than 5 meters OR speed is incredibly slow, just re-center.
-                    if (dist < 5 || speedMs < 0.8) {
-                        this.lastValidPoint = { lat: latitude, lng: longitude };
-                        this.lastTime = timestamp;
-                        return { status: 'REFINING', distance: this.totalDistance, accuracy, speed: 0 };
-                    }
-                }
+                // 5. Noise and Jump Filtering (Strava-like filtering)
+                const speedMs = dist / dt;
                 
-                // Speed threshold: 0.4 m/s (approx 1.4 km/h) to avoid "GPS drift" while standing still
-                if (speedMs < 0.4) {
-                    this.stationaryCount++;
+                // Speed threshold: 0.2 m/s (approx 0.7 km/h) to avoid "GPS drift" distance while standing still
+                if (speedMs < 0.2) {
                     this.lowSpeedDuration += dt;
                     if (this.lowSpeedDuration >= 10) return { status: 'AUTO_PAUSED', distance: this.totalDistance, accuracy, speed: 0 };
                     return { status: 'STATIONARY', distance: this.totalDistance, accuracy };
                 }
 
-                this.stationaryCount = 0; // Reset stationary count since we are moving
-
                 // Jump filter: Ignore speeds > 12 m/s (43 km/h) as it's likely a GPS glitch or driving
                 if (speedMs > 12) return { status: 'JUMP', distance: this.totalDistance, accuracy };
                 
-                // 6. Valid Movement: Requires at least 2.5 meters of movement to prevent micro-drifts from adding up
-                if (dist > 2.5) {
+                // 6. Valid Movement // Added distance only if moved more than 1.5m to keep meter stable
+                if (dist > 1.5) {
                     this.totalDistance += dist;
                     this.lastValidPoint = { lat: latitude, lng: longitude };
                     this.lastTime = timestamp;
@@ -485,14 +428,6 @@
             const [userData, setUserData] = useState(null);
             const [runs, setRuns] = useState([]); 
             const [vibe, setVibe] = useState("");
-            const [modalData, setModalData] = useState(null);
-
-            // Workspace Addition States
-            const [folders, setFolders] = useState([]);
-            const [files, setFiles] = useState([]);
-            const [notes, setNotes] = useState([]);
-            const [teamMembers, setTeamMembers] = useState([]);
-            const [wsModal, setWsModal] = useState(null); // { type: 'folder' | 'file' | 'note' | 'team' }
 
             // UI Render State
             const [isRunning, setIsRunning] = useState(false);
@@ -504,21 +439,6 @@
             const [accuracy, setAccuracy] = useState(0);
             const [gpsStatus, setGpsStatus] = useState("WAITING");
             const [lastSummary, setLastSummary] = useState(null);
-
-            // --- PRO LEVEL ADDITIONS ---
-            const [pendingRun, setPendingRun] = useState(null);
-            const [sharedRunData, setSharedRunData] = useState(null);
-            
-            // ADDED FOR FIX: Hoisted Auth States to prevent React Hooks crash (white screen fix)
-            const [authEmail, setAuthEmail] = useState('');
-            const [authPassword, setAuthPassword] = useState('');
-            const [authError, setAuthError] = useState('');
-            const [isAuthLoading, setIsAuthLoading] = useState(false);
-            const [verificationEmail, setVerificationEmail] = useState('');
-
-            // ADDED FOR FIX: Hoisted from views to prevent React Hooks crash
-            const [inputName, setInputName] = useState("");
-            const [copied, setCopied] = useState(false);
 
             // AI States
             const [aiBriefing, setAiBriefing] = useState(null);
@@ -537,239 +457,35 @@
             const isPausedRef = useRef(false);
             useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
 
-            // Startup & User Loading (+ URL Share Parser)
+            // Startup & User Loading
             useEffect(() => {
-                // Check if we arrived via a public share link
-                const hash = window.location.hash;
-                if (hash.startsWith('#share=')) {
-                    try {
-                        const encodedData = hash.replace('#share=', '');
-                        const data = decodeRunData(encodedData);
-                        setSharedRunData(data);
-                        setView('public_share');
-                        return; // Halt normal initialization, user is just viewing a link
-                    } catch(e) {
-                        console.error("Invalid share link");
-                    }
-                }
-
                 const timer = setTimeout(() => {
-                    let unsubscribeRuns = () => {};
-
-                    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-                        setIsAuthLoading(false); // Reset loading state when auth state resolves
-                        unsubscribeRuns(); // Ensure we clear any previous firestore listeners if user switches accounts
+                    try {
+                        const savedUser = localStorage.getItem('runo_user');
+                        const savedRuns = localStorage.getItem('runo_history');
                         
-                        if (firebaseUser) {
-                            // Check if email is verified (DISABLED AS REQUESTED)
-                            // if (!firebaseUser.emailVerified) {
-                            //     setVerificationEmail(firebaseUser.email);
-                            //     signOut(auth);
-                            //     setView('verify_email');
-                            //     return;
-                            // }
-
-                            try {
-                                // MIGRATION LOGIC TO SAVE EXISTING DATA ACROSS ACCOUNTS
-                                const legacyUserStr = localStorage.getItem('runo_user');
-                                if (legacyUserStr) {
-                                    const legacyUser = JSON.parse(legacyUserStr);
-                                    // If this legacy data has no UID, or if it matches the current user, migrate it.
-                                    if (!legacyUser.uid || legacyUser.uid === firebaseUser.uid) {
-                                        localStorage.setItem('runo_user_' + firebaseUser.uid, legacyUserStr);
-                                        const legacyRuns = localStorage.getItem('runo_history');
-                                        if (legacyRuns) localStorage.setItem('runo_history_' + firebaseUser.uid, legacyRuns);
-                                        
-                                        // Remove legacy keys so they don't get migrated to the next random account that logs in
-                                        localStorage.removeItem('runo_user');
-                                        localStorage.removeItem('runo_history');
-                                    }
-                                }
-
-                                // Load User-Specific Data securely
-                                const savedUser = localStorage.getItem('runo_user_' + firebaseUser.uid);
-                                const savedRuns = localStorage.getItem('runo_history_' + firebaseUser.uid);
-                                
-                                // ---- NEW FIRESTORE SYNC CODE (REAL-TIME ISOLATION) ----
-                                const userDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid);
-                                getDoc(userDocRef).then((docSnap) => {
-                                    if (docSnap.exists()) {
-                                        const remoteUserData = docSnap.data();
-                                        setUserData(remoteUserData);
-                                        localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(remoteUserData));
-                                    } else {
-                                        // Check legacy profile/data path just in case
-                                        const legacyProfileDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'data');
-                                        getDoc(legacyProfileDocRef).then((legacySnap) => {
-                                            let newUser;
-                                            if (legacySnap.exists()) {
-                                                newUser = legacySnap.data();
-                                            } else if (savedUser) {
-                                                newUser = JSON.parse(savedUser);
-                                            } else {
-                                                // Pull in dynamic values from Firebase Auth if available (like Google Sign In Name/Photo)
-                                                newUser = { 
-                                                    name: firebaseUser.displayName || "Athlete", 
-                                                    displayName: firebaseUser.displayName || "Athlete",
-                                                    email: firebaseUser.email || "",
-                                                    streak: 0, 
-                                                    totalKm: 0, 
-                                                    shields: 1, 
-                                                    joined: Date.now(), 
-                                                    createdAt: Date.now(),
-                                                    profilePic: firebaseUser.photoURL || null, 
-                                                    photoURL: firebaseUser.photoURL || null,
-                                                    uid: firebaseUser.uid 
-                                                };
-                                            }
-                                            setUserData(newUser);
-                                            localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(newUser));
-                                            setDoc(userDocRef, newUser, { merge: true }).catch(err => console.error(err)); // Create in Firestore proper path
-                                        });
-                                    }
-                                }).catch(err => {
-                                    console.error("Firestore user error", err);
-                                    // Fallback to local if offline
-                                    if (savedUser) setUserData(JSON.parse(savedUser));
-                                });
-
-                                const runsColRef = collection(db, 'artifacts', appId, 'users', firebaseUser.uid, 'runs');
-                                const localRuns = savedRuns ? JSON.parse(savedRuns) : [];
-                                
-                                unsubscribeRuns = onSnapshot(runsColRef, (snapshot) => {
-                                    const remoteRuns = [];
-                                    snapshot.forEach(d => remoteRuns.push(d.data()));
-                                    
-                                    // Merge missing local runs to Firestore (Prevents data loss on first sync)
-                                    const remoteIds = new Set(remoteRuns.map(r => String(r.id)));
-                                    localRuns.forEach(lr => {
-                                        if (!remoteIds.has(String(lr.id))) {
-                                            setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'runs', String(lr.id)), lr).catch(e => console.error(e));
-                                            remoteRuns.push(lr);
-                                        }
-                                    });
-
-                                    remoteRuns.sort((a, b) => b.timestamp - a.timestamp);
-                                    setRuns(remoteRuns);
-                                    localStorage.setItem('runo_history_' + firebaseUser.uid, JSON.stringify(remoteRuns));
-                                }, (err) => {
-                                    console.error("Firestore runs error", err);
-                                    setRuns(localRuns);
-                                });
-                                // ---- END FIRESTORE SYNC CODE ----
-                                
-                                // FIX: Only transition to home if we are coming from initial splash or onboarding
-                                setView((currentView) => {
-                                    if (currentView === 'splash' || currentView === 'onboarding') {
-                                        return 'home';
-                                    }
-                                    return currentView;
-                                });
-                            } catch (e) {
-                                console.error(e);
-                            }
+                        if (savedUser) {
+                            setUserData(JSON.parse(savedUser));
+                            if (savedRuns) setRuns(JSON.parse(savedRuns));
+                            setView('home');
                         } else {
-                            setView((currentView) => {
-                                if (currentView !== 'verify_email' && currentView !== 'public_share') {
-                                    return 'onboarding';
-                                }
-                                return currentView;
-                            });
+                            setView('onboarding');
                         }
-                    });
-
-                    return () => {
-                        unsubscribe();
-                        unsubscribeRuns();
-                    };
+                    } catch (e) {
+                        setView('onboarding');
+                    }
                 }, 1500);
-                
                 return () => clearTimeout(timer);
-            }, []); // Removed `view` dependency to prevent infinite loops and forced re-routing
+            }, []);
 
-            // WORKSPACE DATA FETCHING
-            useEffect(() => {
-                if (!userData || !userData.uid) return;
-                const uid = userData.uid;
-
-                const foldersRef = collection(db, 'artifacts', appId, 'users', uid, 'folders');
-                const unsubFolders = onSnapshot(foldersRef, snap => {
-                    setFolders(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                }, err => console.error("Folders error", err));
-
-                const filesRef = collection(db, 'artifacts', appId, 'users', uid, 'files');
-                const unsubFiles = onSnapshot(filesRef, snap => {
-                    setFiles(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                }, err => console.error("Files error", err));
-
-                const notesRef = collection(db, 'artifacts', appId, 'users', uid, 'notes');
-                const unsubNotes = onSnapshot(notesRef, snap => {
-                    setNotes(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                }, err => console.error("Notes error", err));
-
-                const teamRef = collection(db, 'artifacts', appId, 'users', uid, 'teamMembers');
-                const unsubTeam = onSnapshot(teamRef, snap => {
-                    setTeamMembers(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                }, err => console.error("Team error", err));
-
-                return () => {
-                    unsubFolders(); unsubFiles(); unsubNotes(); unsubTeam();
-                };
-            }, [userData?.uid]);
-
-            const handleImageUpload = async (e) => {
+            const handleImageUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    setModalData({
-                        title: 'Uploading...',
-                        message: 'Saving your profile picture securely to the cloud.',
-                        content: <div className="flex justify-center"><Icon name="Loader2" className="animate-spin text-blue-600" size={32} /></div>,
-                    });
                     const reader = new FileReader();
-                    reader.onloadend = async () => {
-                        try { 
-                            const base64String = reader.result;
-                            
-                            // 1. Upload to Firebase Storage
-                            const imageRef = ref(storage, `profileImages/${userData.uid}`);
-                            await uploadString(imageRef, base64String, 'data_url');
-                            
-                            // 2. Get Download URL
-                            const downloadURL = await getDownloadURL(imageRef);
-                            
-                            // 3. Update User Data
-                            const updatedUser = { 
-                                ...userData, 
-                                profilePic: downloadURL,
-                                photoURL: downloadURL
-                            };
-                            setUserData(updatedUser);
-                            localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser)); 
-                            
-                            // ---- NEW FIRESTORE SYNC ----
-                            if (userData && userData.uid) {
-                                const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid);
-                                await setDoc(userDocRef, updatedUser, { merge: true });
-                                
-                                // Backwards compatibility legacy update
-                                const legacyDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
-                                await setDoc(legacyDocRef, updatedUser, { merge: true });
-                            }
-                            // ---- END NEW FIRESTORE SYNC ----
-
-                            if (auth.currentUser) {
-                                await updateProfile(auth.currentUser, { photoURL: downloadURL });
-                            }
-                            setModalData(null); // close loading modal
-                        } catch (err) {
-                            console.error("Upload error", err);
-                            setModalData({
-                                title: 'Upload Failed',
-                                message: 'There was an error uploading your image to Firebase Storage.',
-                                onConfirm: () => setModalData(null),
-                                confirmText: 'Okay'
-                            });
-                        }
+                    reader.onloadend = () => {
+                        const updatedUser = { ...userData, profilePic: reader.result };
+                        setUserData(updatedUser);
+                        try { localStorage.setItem('runo_user', JSON.stringify(updatedUser)); } catch (err) {}
                     };
                     reader.readAsDataURL(file);
                 }
@@ -845,11 +561,6 @@
                             setGpsStatus("LOCKING...");
                             return;
                         }
-                        
-                        if (result.status === 'REFINING') {
-                            setGpsStatus("CALIBRATING");
-                            return;
-                        }
 
                         setGpsStatus("RECORDING");
 
@@ -866,24 +577,14 @@
                     }, (err) => {
                         console.error("GPS Error:", err);
                         setGpsStatus("ERROR");
-                        setModalData({
-                            title: 'GPS Required',
-                            message: 'Please enable Location Services/GPS to properly track your run.',
-                            onConfirm: () => {},
-                            confirmText: 'Got It'
-                        });
+                        alert("Please enable Location Services/GPS to track your run.");
                     }, { 
                         enableHighAccuracy: true, 
                         maximumAge: 0, 
                         timeout: 10000 
                     });
                 } else {
-                    setModalData({
-                        title: 'Not Supported',
-                        message: 'Geolocation tracking is not supported by your current browser.',
-                        onConfirm: () => {},
-                        confirmText: 'Okay'
-                    });
+                    alert("Geolocation is not supported by your browser.");
                 }
             };
 
@@ -900,92 +601,36 @@
                 const finalElapsed = Math.max(0, Math.floor(elapsedMs / 1000));
                 const finalDistanceKm = finalDistance / 1000;
                 const paceString = formatPace(finalElapsed, finalDistance);
-                const calories = Math.floor(finalDistanceKm * 75 * 1.036); // Precision Calorie calc
 
-                // MUCH STRICTER threshold: Force naming modal even on small runs (e.g. 2 meters or 5 seconds)
-                if (finalDistance > 2 || finalElapsed > 5) { 
-                    setInputName(""); // Reset name for fresh entry
-                    setPendingRun({
-                        id: Date.now().toString(),
-                        timestamp: Date.now(),
-                        duration: finalElapsed,
-                        distance: finalDistance,
-                        pace: paceString,
-                        calories: calories
-                    });
-                    setView('save_run'); 
+                if (finalDistance > 5) { 
+                    const runName = prompt("Session complete! Enter a name for this run:", `Run ${new Date().toLocaleDateString()}`);
+                    const summary = { 
+                        id: Date.now(), 
+                        name: runName || "Morning Session",
+                        timestamp: Date.now(), 
+                        duration: finalElapsed, 
+                        distance: finalDistance, 
+                        pace: paceString 
+                    };
+                    
+                    setLastSummary(summary);
+                    
+                    const updatedRuns = [summary, ...runs];
+                    setRuns(updatedRuns);
+                    localStorage.setItem('runo_history', JSON.stringify(updatedRuns));
+
+                    const updatedUser = { 
+                        ...userData, 
+                        streak: (userData?.streak || 0) + 1, 
+                        totalKm: (userData?.totalKm || 0) + finalDistanceKm 
+                    };
+                    setUserData(updatedUser);
+                    localStorage.setItem('runo_user', JSON.stringify(updatedUser));
                 } else {
-                    // Only drop completely 0m / super quick test runs
                     setLastSummary({ distance: 0, duration: 0, pace: "0:00" });
-                    setView('home');
                 }
                 
                 setIsRunning(false);
-            };
-
-            // Triggered after user enters a mandatory run name
-            const saveCompletedRun = async (runName) => {
-                const summary = { 
-                    ...pendingRun, 
-                    name: runName,
-                    createdAt: Date.now()
-                };
-                setLastSummary(summary);
-                
-                const updatedRuns = [summary, ...runs];
-                setRuns(updatedRuns);
-                localStorage.setItem('runo_history_' + userData.uid, JSON.stringify(updatedRuns));
-
-                const finalDistanceKm = summary.distance / 1000;
-                const updatedUser = { 
-                    ...userData, 
-                    streak: (userData?.streak || 0) + 1, 
-                    totalKm: (userData?.totalKm || 0) + finalDistanceKm 
-                };
-                setUserData(updatedUser);
-                localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser));
-
-                // ---- NEW FIRESTORE SYNC ----
-                if (userData && userData.uid) {
-                    try {
-                        const runDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'runs', String(summary.id));
-                        await setDoc(runDocRef, summary);
-                        
-                        const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid);
-                        await setDoc(userDocRef, updatedUser, { merge: true });
-                        
-                        // Legacy user data sync
-                        const legacyUserDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
-                        await setDoc(legacyUserDocRef, updatedUser, { merge: true });
-                    } catch(e) { console.error("Sync error:", e); }
-                }
-                // ---- END NEW FIRESTORE SYNC ----
-
-                setPendingRun(null);
-                setView('post_save_share'); // Proceed to new share screen
-            };
-
-            // Enhanced Delete functionality using Custom GlobalModal
-            const confirmDeleteRun = (id) => {
-                setModalData({
-                    title: 'Delete Mission?',
-                    message: 'Permanently delete this mission from your records? This action cannot be undone.',
-                    onConfirm: async () => {
-                        const newRuns = runs.filter(r => r.id !== id);
-                        setRuns(newRuns);
-                        localStorage.setItem('runo_history_' + userData.uid, JSON.stringify(newRuns));
-                        // ---- NEW FIRESTORE SYNC ----
-                        if (userData && userData.uid) {
-                            try {
-                                await deleteDoc(doc(db, 'artifacts', appId, 'users', userData.uid, 'runs', String(id)));
-                            } catch(e) { console.error("Sync error:", e); }
-                        }
-                        // ---- END NEW FIRESTORE SYNC ----
-                    },
-                    onCancel: () => {},
-                    confirmText: 'Delete',
-                    cancelText: 'Keep It'
-                });
             };
 
             const togglePause = () => {
@@ -1016,81 +661,6 @@
                 return `${h > 0 ? h.toString().padStart(2, '0') + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             };
 
-            // Helper to generate dynamic Run Names based on distance and time
-            const getSmartSuggestions = () => {
-                if(!pendingRun) return [];
-                const distKm = pendingRun.distance / 1000;
-                const hrs = new Date().getHours();
-                const timeOfDay = hrs < 12 ? "Morning" : hrs < 17 ? "Afternoon" : "Evening";
-                
-                let intenseAdj = distKm > 10 ? "Beast Mode" : distKm > 5 ? "Grind" : "Sprint";
-                let friendlyDist = distKm < 1 ? "Quick Dash" : `${distKm.toFixed(0)}K`;
-
-                return [
-                    `${timeOfDay} ${intenseAdj}`,
-                    `${friendlyDist} Comeback`,
-                    `The ${timeOfDay} Push`,
-                    `Lunchbreak Hustle`
-                ];
-            };
-
-            // Enhanced Share Feature with Fallback UI
-            const handleShareAction = async (runObj) => {
-                const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encodeRunData(runObj)}`;
-                if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            title: `Check out my ${runObj.name} on Runo!`,
-                            text: `I just ran ${(runObj.distance/1000).toFixed(2)}km in ${formatTime(runObj.duration)}!`,
-                            url: shareUrl
-                        });
-                    } catch (err) {
-                        console.error('Native share failed', err);
-                    }
-                } else {
-                    // Safe iframe/fallback cross-browser copy mechanism
-                    const textArea = document.createElement("textarea");
-                    textArea.value = shareUrl;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                    } catch (err) {
-                        console.error('Copy failed', err);
-                    }
-                    document.body.removeChild(textArea);
-                    
-                    setModalData({
-                        title: 'Link Copied!',
-                        message: 'Your public share link has been securely copied to your clipboard.',
-                        content: <input type="text" readOnly value={shareUrl} className="w-full bg-slate-100 border border-slate-300 text-slate-600 rounded-xl p-3 text-xs font-mono" />,
-                        onConfirm: () => {},
-                        confirmText: 'Awesome'
-                    });
-                }
-            };
-
-            // Enhanced Logout with Custom Modal
-            const handleLogoutRequest = () => {
-                setModalData({
-                    title: 'Logout Request',
-                    message: 'Are you sure? This will securely sign you out of your account.',
-                    onConfirm: async () => { 
-                        try {
-                            setUserData(null); // Clear sensitive data from memory securely
-                            setRuns([]); // Clear run history from memory securely
-                            await signOut(auth);
-                            setView('onboarding'); 
-                        } catch (error) {
-                            console.error('Error signing out', error);
-                        }
-                    },
-                    onCancel: () => {},
-                    confirmText: 'Logout',
-                    cancelText: 'Cancel'
-                });
-            };
-
             // AI Functions
             const fetchBriefing = async () => {
                 setIsBriefingLoading(true);
@@ -1115,264 +685,35 @@
 
             // --- SCREENS ---
 
-            // Custom Global Modal UI (Fixes all iframe alert/confirm issues)
-            const GlobalModal = () => {
-                if (!modalData) return null;
-                return (
-                    <div className="absolute inset-0 z-[1000] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6 animate__animated animate__fadeIn">
-                        <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] animate__animated animate__zoomIn animate__faster">
-                            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 border border-slate-200">
-                                <Icon name="Activity" size={24} color="#0f172a" />
-                            </div>
-                            <h3 className="text-2xl font-black text-slate-900 uppercase mb-2 leading-tight">{modalData.title}</h3>
-                            <p className="text-slate-600 font-bold text-sm mb-8 leading-relaxed">{modalData.message}</p>
-                            {modalData.content && <div className="mb-6">{modalData.content}</div>}
-                            <div className="flex gap-3">
-                                {modalData.onCancel && (
-                                    <button onClick={() => { modalData.onCancel(); setModalData(null); }} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-xl font-black uppercase text-xs border-2 border-transparent active:scale-95 transition-transform">
-                                        {modalData.cancelText || 'Cancel'}
-                                    </button>
-                                )}
-                                <button onClick={() => { modalData.onConfirm(); setModalData(null); }} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black uppercase text-xs shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900 active:translate-y-1 active:shadow-none transition-all">
-                                    {modalData.confirmText || 'Confirm'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-            // Custom Dynamic Workspace Creation Modal
-            const WorkspaceModal = () => {
-                if (!wsModal) return null;
-                const [form, setForm] = useState({ name: '', title: '', content: '', size: '', role: '', folderId: '' });
-                const [isSaving, setIsSaving] = useState(false);
-
-                const handleSave = async () => {
-                    if (!userData?.uid) return;
-                    setIsSaving(true);
-                    try {
-                        const uid = userData.uid;
-                        const pathBase = ['artifacts', appId, 'users', uid];
-                        
-                        if (wsModal.type === 'folder') {
-                            if(!form.name) return;
-                            await addDoc(collection(db, ...pathBase, 'folders'), { name: form.name, createdAt: Date.now() });
-                        } else if (wsModal.type === 'file') {
-                            if(!form.name) return;
-                            await addDoc(collection(db, ...pathBase, 'files'), { name: form.name, folderId: form.folderId || null, size: form.size || '1 KB', createdAt: Date.now() });
-                        } else if (wsModal.type === 'note') {
-                            if(!form.title) return;
-                            await addDoc(collection(db, ...pathBase, 'notes'), { title: form.title, content: form.content || '', createdAt: Date.now() });
-                        } else if (wsModal.type === 'team') {
-                            if(!form.name) return;
-                            await addDoc(collection(db, ...pathBase, 'teamMembers'), { name: form.name, role: form.role || 'Member', createdAt: Date.now() });
-                        }
-                        setWsModal(null);
-                    } catch(e) {
-                        console.error("Save error", e);
-                    } finally {
-                        setIsSaving(false);
-                    }
-                };
-
-                const getTitle = () => {
-                    switch(wsModal.type) {
-                        case 'folder': return 'New Folder';
-                        case 'file': return 'Add File';
-                        case 'note': return 'New Note';
-                        case 'team': return 'Add Member';
-                        default: return '';
-                    }
-                };
-
-                return (
-                    <div className="absolute inset-0 z-[1000] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6 animate__animated animate__fadeIn">
-                        <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] animate__animated animate__zoomIn animate__faster">
-                            <h3 className="text-2xl font-black text-slate-900 uppercase mb-6 leading-tight">{getTitle()}</h3>
-                            
-                            <div className="space-y-4 mb-8">
-                                {(wsModal.type === 'folder' || wsModal.type === 'file' || wsModal.type === 'team') && (
-                                    <input 
-                                        type="text"
-                                        placeholder="Name"
-                                        value={form.name}
-                                        onChange={e => setForm({...form, name: e.target.value})}
-                                        className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
-                                    />
-                                )}
-                                {wsModal.type === 'note' && (
-                                    <>
-                                        <input 
-                                            type="text"
-                                            placeholder="Note Title"
-                                            value={form.title}
-                                            onChange={e => setForm({...form, title: e.target.value})}
-                                            className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
-                                        />
-                                        <textarea 
-                                            placeholder="Note Content"
-                                            value={form.content}
-                                            onChange={e => setForm({...form, content: e.target.value})}
-                                            className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors h-24 resize-none"
-                                        />
-                                    </>
-                                )}
-                                {wsModal.type === 'file' && (
-                                    <input 
-                                        type="text"
-                                        placeholder="Size (e.g. 2 MB)"
-                                        value={form.size}
-                                        onChange={e => setForm({...form, size: e.target.value})}
-                                        className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
-                                    />
-                                )}
-                                {wsModal.type === 'team' && (
-                                    <input 
-                                        type="text"
-                                        placeholder="Role (Optional)"
-                                        value={form.role}
-                                        onChange={e => setForm({...form, role: e.target.value})}
-                                        className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
-                                    />
-                                )}
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button onClick={() => setWsModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-xl font-black uppercase text-xs border-2 border-transparent active:scale-95 transition-transform">
-                                    Cancel
-                                </button>
-                                <button onClick={handleSave} disabled={isSaving} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black uppercase text-xs shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900 active:translate-y-1 active:shadow-none transition-all disabled:opacity-70 flex justify-center items-center gap-2">
-                                    {isSaving ? <Icon name="Loader2" className="animate-spin" size={16} /> : 'Save'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
             const Splash = () => (
                 <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center animate__animated animate__fadeIn z-[200] w-full h-full">
-                    {/* Elite Circular Cropped Logo Animation */}
-                    <div className="w-32 h-32 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] border-4 border-slate-800 animate__animated animate__zoomIn overflow-hidden bg-black relative">
-                        <img 
-                            src="WhatsApp%20Image%202026-04-03%20at%204.47.26%20PM.jpeg" 
-                            alt="Runo Logo" 
-                            className="w-full h-full object-cover scale-[1.25] relative z-10" 
-                            onError={(e) => { 
-                                // Image loaded error fallback disabled to ensure display
-                                console.log("Logo load delayed");
-                            }}
-                        />
-                        {/* Fallback in case the image path is wrong */}
-                        <div id="fallback-logo" style={{display: 'none'}} className="absolute inset-0 items-center justify-center bg-blue-600 z-20">
-                            <Icon name="Activity" size={48} color="white" />
-                        </div>
+                    <div className="w-24 h-24 bg-blue-600 rounded-[2rem] rotate-45 flex items-center justify-center shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900 animate__animated animate__zoomIn">
+                        <Icon name="Activity" size={48} color="white" className="-rotate-45" />
                     </div>
                 </div>
             );
 
-            const Onboarding = () => { // Firebase Auth Implementation
-                const handleSignIn = async () => {
-                    if (!authEmail || !authPassword) return setAuthError("Please enter email and password");
-                    setIsAuthLoading(true);
-                    setAuthError('');
-                    try {
-                        const userCredential = await signInWithEmailAndPassword(auth, authEmail, authPassword);
-                        // EMAIL VERIFICATION DISABLED:
-                        // if (!userCredential.user.emailVerified) {
-                        //     setVerificationEmail(userCredential.user.email);
-                        //     await signOut(auth);
-                        //     setIsAuthLoading(false);
-                        //     setView('verify_email');
-                        //     return;
-                        // }
-                        // onAuthStateChanged handles redirect to home
-                    } catch (error) {
-                        setAuthError("Email or password is incorrect");
-                        setIsAuthLoading(false);
-                    }
-                };
-
-                const handleSignUp = async () => {
-                    if (!authEmail || !authPassword) return setAuthError("Please enter email and password");
-                    setIsAuthLoading(true);
-                    setAuthError('');
-                    try {
-                        const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
-                        // EMAIL VERIFICATION DISABLED:
-                        // await sendEmailVerification(userCredential.user);
-                        // await signOut(auth); // Sign out immediately to prevent auto-login
-                        // setVerificationEmail(authEmail);
-                        // setIsAuthLoading(false);
-                        // setView('verify_email');
-                    } catch (error) {
-                        if (error.code === 'auth/email-already-in-use') {
-                            setAuthError("User already exists. Please sign in");
-                        } else {
-                            setAuthError(error.message);
-                        }
-                        setIsAuthLoading(false);
-                    }
-                };
-
-                const handleGoogleSignIn = async () => {
-                    setIsAuthLoading(true);
-                    setAuthError('');
-                    const provider = new GoogleAuthProvider();
-                    try {
-                        await signInWithPopup(auth, provider);
-                        // onAuthStateChanged handles redirect
-                    } catch (error) {
-                        setAuthError(error.message);
-                        setIsAuthLoading(false);
-                    }
+            const Onboarding = () => { // Google Sign In Logic Implementation
+                const handleLogin = () => {
+                    const newUser = { name: "Athlete", streak: 0, totalKm: 0, shields: 1, joined: Date.now(), profilePic: null };
+                    setUserData(newUser); 
+                    try { localStorage.setItem('runo_user', JSON.stringify(newUser)); } catch (e) {}
+                    setView('home'); 
                 };
 
                 return (
                     <div className="absolute inset-0 bg-slate-900 text-white p-8 flex flex-col justify-center items-center text-center z-[150] animate__animated animate__fadeIn w-full h-full">
-                        <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center mb-8 shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900 overflow-hidden relative">
-                            {/* Uses the same uploaded image file from the prompt constraints */}
-                            <img src="WhatsApp%20Image%202026-04-03%20at%204.47.26%20PM.jpeg" alt="Logo" className="w-full h-full object-cover scale-[1.25] absolute inset-0 z-10" onError={(e) => { console.log("Logo loading..."); }} />
-                            <Icon name="User" size={48} color="white" className="relative z-0" />
+                        <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900">
+                            <Icon name="User" size={48} color="white" />
                         </div>
                         <h1 className="text-6xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp">Welcome.</h1>
                         <p className="text-slate-300 mb-12 uppercase tracking-widest text-xs font-bold leading-relaxed">Your fitness journey<br/>begins now.</p>
                         
+                        {/* Fake Non-workable Google Button (Medium Premium Styled) */}
                         <div className="w-full max-w-[320px] space-y-4">
-                            <input 
-                                type="email" 
-                                placeholder="Email" 
-                                value={authEmail}
-                                onChange={(e) => setAuthEmail(e.target.value)}
-                                className="w-full bg-slate-800 border-2 border-slate-700 text-white rounded-2xl p-4 text-sm font-bold focus:outline-none focus:border-blue-500 transition-colors"
-                            />
-                            <input 
-                                type="password" 
-                                placeholder="Password" 
-                                value={authPassword}
-                                onChange={(e) => setAuthPassword(e.target.value)}
-                                className="w-full bg-slate-800 border-2 border-slate-700 text-white rounded-2xl p-4 text-sm font-bold focus:outline-none focus:border-blue-500 transition-colors"
-                            />
-                            
-                            {authError && (
-                                <p className="text-red-400 text-xs font-bold uppercase tracking-widest text-center mt-2 mb-2 animate__animated animate__headShake">
-                                    {authError}
-                                </p>
-                            )}
-
                             <button 
-                                onClick={handleSignIn}
-                                disabled={isAuthLoading}
-                                className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-sm fitness-card active:scale-95 transition-all flex items-center justify-center gap-3 border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] uppercase tracking-widest mt-4 disabled:opacity-70"
-                            >
-                                {isAuthLoading ? <Icon name="Loader2" className="animate-spin text-slate-900" size={20}/> : "Sign In"}
-                            </button>
-
-                            <button 
-                                onClick={handleGoogleSignIn}
-                                disabled={isAuthLoading}
-                                className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm fitness-card active:scale-95 transition-all flex items-center justify-center gap-3 border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] disabled:opacity-70 mt-4"
+                                onClick={handleLogin}
+                                className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold text-sm fitness-card active:scale-95 transition-all flex items-center justify-center gap-3 border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a]"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24">
                                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -1390,34 +731,10 @@
                             </div>
 
                             <button 
-                                onClick={handleSignUp} 
-                                disabled={isAuthLoading}
-                                className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg fitness-card active:scale-95 transition-all uppercase tracking-tight disabled:opacity-70 flex justify-center items-center gap-2"
+                                onClick={handleLogin} 
+                                className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg fitness-card active:scale-95 transition-all uppercase tracking-tight"
                             >
-                                {isAuthLoading ? <Icon name="Loader2" className="animate-spin text-white" size={24}/> : "CREATE ACCOUNT"}
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
-            const VerifyEmailView = () => {
-                return (
-                    <div className="absolute inset-0 bg-slate-900 text-white p-8 flex flex-col justify-center items-center text-center z-[150] animate__animated animate__fadeIn w-full h-full">
-                        <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900">
-                            <Icon name="MessageSquare" size={48} color="white" />
-                        </div>
-                        <h1 className="text-5xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp leading-tight">Verify<br/>Email.</h1>
-                        <p className="text-slate-300 mb-12 text-sm font-bold leading-relaxed max-w-xs">
-                            We have sent you a verification email to <span className="text-blue-400 block mt-1 text-base">{verificationEmail}</span><br/>Please verify it and log in.
-                        </p>
-                        
-                        <div className="w-full max-w-[320px] space-y-4">
-                            <button 
-                                onClick={() => setView('onboarding')} 
-                                className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-lg fitness-card active:scale-95 transition-all uppercase tracking-tight flex justify-center items-center gap-2 shadow-[4px_6px_0px_#0f172a]"
-                            >
-                                Log In
+                                GET STARTED
                             </button>
                         </div>
                     </div>
@@ -1456,8 +773,9 @@
                         </div>
                     </div>
 
-                    {/* VIBRANT Blue Target Card */}
+                    {/* VIBRANT Blue Target Card with CHANGED: Realistic Water Layers & Premium Dark White Border */}
                     <div className="relative bg-blue-600 rounded-[2.5rem] p-8 text-white mb-8 fitness-card premium-mission-border overflow-hidden">
+                        {/* High Quality Real-Motion Water Background Layers */}
                         <div className="water-container">
                             <div className="water-wave"></div>
                             <div className="water-wave-secondary"></div>
@@ -1554,21 +872,14 @@
                         </div>
 
                         <div className="mb-8">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
-                                    <Icon name="BarChart2" size={20} color="#0f172a"/> Recent Activity
-                                </h3>
-                                {runs.length > 0 && (
-                                    <button onClick={() => setView('history')} className="text-xs font-black text-blue-600 uppercase tracking-widest active:scale-95 transition-transform flex items-center gap-1">
-                                        Full History <Icon name="ChevronRight" size={14} color="#2563eb" />
-                                    </button>
-                                )}
-                            </div>
+                            <h3 className="font-black text-xl mb-6 uppercase text-slate-900 flex items-center gap-2">
+                                <Icon name="BarChart2" size={20} color="#0f172a"/> Recent Activity
+                            </h3>
                             <div className="space-y-4">
                                 {runs.length > 0 ? runs.slice(0, 5).map(run => (
                                     <div key={run.id} className="p-6 bg-white rounded-[2rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex justify-between items-center">
                                         <div>
-                                            <p className="font-black text-slate-900 uppercase text-sm tracking-tight">{run.name || "Mission"}</p>
+                                            <p className="font-black text-slate-900 uppercase text-sm tracking-tight">{run.name}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Icon name="Calendar" size={12} color="#64748b"/>
                                                 <span className="text-[10px] font-bold text-slate-500 uppercase">{new Date(run.timestamp).toLocaleDateString()}</span>
@@ -1592,356 +903,21 @@
                 );
             };
 
-            const WorkspaceView = () => (
-                <div className="absolute inset-0 px-6 pt-6 overflow-y-auto custom-scroll animate__animated animate__fadeIn w-full h-full pb-32">
-                    <IndianClock />
-                    <header className="mb-8 mt-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Workspace</p>
-                        <h1 className="text-4xl font-black tracking-tighter text-slate-900">Vault.</h1>
-                    </header>
-
-                    {/* FILES & FOLDERS SECTION */}
-                    <div className="mb-10">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
-                                <Icon name="Folder" size={20} color="#0f172a"/> My Files
-                            </h3>
-                            <div className="flex gap-2">
-                                <button onClick={() => setWsModal({type: 'folder'})} className="p-2 bg-slate-900 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
-                                    <Icon name="Folder" size={16} color="white" />
-                                </button>
-                                <button onClick={() => setWsModal({type: 'file'})} className="p-2 bg-blue-600 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
-                                    <Icon name="Plus" size={16} color="white" />
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {folders.length === 0 && files.length === 0 && (
-                                <div className="p-8 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-300">
-                                    <p className="text-slate-400 font-bold text-sm">Vault is empty.</p>
-                                </div>
-                            )}
-
-                            {/* Folders */}
-                            {folders.map(folder => (
-                                <div key={folder.id} className="p-5 bg-slate-900 text-white rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center gap-4 cursor-pointer hover:-translate-y-1 transition-transform">
-                                    <div className="w-10 h-10 bg-slate-800 rounded-xl flex justify-center items-center">
-                                        <Icon name="Folder" size={20} color="#60a5fa" />
-                                    </div>
-                                    <p className="font-black text-white uppercase text-sm tracking-tight flex-1 truncate">{folder.name}</p>
-                                </div>
-                            ))}
-
-                            {/* Files */}
-                            {files.map(file => (
-                                <div key={file.id} className="p-5 bg-white rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center gap-4 hover:-translate-y-1 transition-transform">
-                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex justify-center items-center border border-blue-200">
-                                        <Icon name="FileText" size={20} color="#2563eb" />
-                                    </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <p className="font-black text-slate-900 uppercase text-sm tracking-tight truncate">{file.name}</p>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{file.size}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* NOTES SECTION */}
-                    <div className="mb-10">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
-                                <Icon name="FileText" size={20} color="#0f172a"/> My Notes
-                            </h3>
-                            <button onClick={() => setWsModal({type: 'note'})} className="p-2 bg-purple-600 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
-                                <Icon name="Plus" size={16} color="white" />
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            {notes.length === 0 && (
-                                <div className="col-span-2 p-8 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-300">
-                                    <p className="text-slate-400 font-bold text-sm">No notes created.</p>
-                                </div>
-                            )}
-                            {notes.map(note => (
-                                <div key={note.id} className="p-5 bg-purple-50 rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex flex-col h-32 hover:-translate-y-1 transition-transform">
-                                    <p className="font-black text-slate-900 uppercase text-xs tracking-tight line-clamp-2 mb-2">{note.title}</p>
-                                    <p className="text-[10px] font-semibold text-slate-600 leading-relaxed line-clamp-3 overflow-hidden">{note.content}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* TEAM SECTION */}
-                    <div className="mb-10">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
-                                <Icon name="Users" size={20} color="#0f172a"/> Team
-                            </h3>
-                            <button onClick={() => setWsModal({type: 'team'})} className="p-2 bg-slate-900 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
-                                <Icon name="Plus" size={16} color="white" />
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            {teamMembers.length === 0 && (
-                                <div className="p-8 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-300">
-                                    <p className="text-slate-400 font-bold text-sm">No team members added.</p>
-                                </div>
-                            )}
-                            {teamMembers.map(member => (
-                                <div key={member.id} className="p-5 bg-white rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center justify-between hover:-translate-y-1 transition-transform">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-slate-200 rounded-full flex justify-center items-center border border-slate-300">
-                                            <Icon name="User" size={18} color="#64748b" />
-                                        </div>
-                                        <p className="font-black text-slate-900 uppercase text-sm tracking-tight">{member.name}</p>
-                                    </div>
-                                    {member.role && (
-                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">{member.role}</span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-
-            const SaveRunModal = () => {
-                const suggestions = getSmartSuggestions();
-
-                return (
-                    <div className="absolute inset-0 z-[300] bg-slate-950 text-white p-8 flex flex-col justify-center overflow-hidden animate__animated animate__fadeIn w-full h-full">
-                        <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
-                        <div className="relative z-10 w-full max-w-md mx-auto">
-                            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-8 border-2 border-slate-800 shadow-[4px_4px_0px_#0f172a]">
-                                <Icon name="CheckCircle" size={32} color="white" />
-                            </div>
-                            <h2 className="text-5xl font-black tracking-tighter mb-2">Name Your<br/><span className="text-blue-500">Mission.</span></h2>
-                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-10">Make it legendary.</p>
-                            
-                            <input 
-                                type="text"
-                                value={inputName}
-                                onChange={(e) => setInputName(e.target.value)}
-                                placeholder="e.g., Morning Beast Mode"
-                                className="w-full bg-slate-900 border-2 border-slate-700 text-white rounded-2xl p-6 text-xl font-black focus:outline-none focus:border-blue-500 transition-colors mb-6 shadow-inner"
-                                autoFocus
-                            />
-
-                            <div className="flex flex-wrap gap-2 mb-8">
-                                {suggestions.map(s => (
-                                    <button 
-                                        key={s} 
-                                        onClick={() => setInputName(s)}
-                                        className="bg-slate-800 text-slate-300 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest active:scale-95 transition-transform"
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-4 text-center">
-                                * A mission name is strictly required to save
-                            </p>
-
-                            <button 
-                                onClick={() => saveCompletedRun(inputName)}
-                                disabled={!inputName.trim()}
-                                className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg disabled:opacity-50 disabled:grayscale transition-all uppercase tracking-widest border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] flex justify-center items-center gap-3"
-                            >
-                                Save Run <Icon name="ChevronRight" size={20} color="white" />
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
-            const PostSaveShareView = () => {
-                const handleCopy = () => {
-                    const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encodeRunData(lastSummary)}`;
-                    const textArea = document.createElement("textarea");
-                    textArea.value = shareUrl;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                    } catch (err) {
-                        console.error('Copy failed', err);
-                    }
-                    document.body.removeChild(textArea);
-                };
-
-                return (
-                    <div className="absolute inset-0 z-[250] bg-slate-900 text-white p-8 flex flex-col justify-center items-center text-center animate__animated animate__zoomIn w-full h-full">
-                        <div className="absolute inset-0 running-bg-glow opacity-50 pointer-events-none"></div>
-                        <div className="relative z-10 w-full max-w-sm">
-                            <Icon name="Flame" size={64} color="#ea580c" className="mx-auto mb-6 animate__animated animate__bounceIn" />
-                            <h2 className="text-4xl font-black tracking-tighter mb-2">Run Saved.</h2>
-                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-10">Your legacy is recorded.</p>
-                            
-                            <div className="bg-slate-800 rounded-3xl p-6 mb-8 border border-slate-700 text-left">
-                                <p className="font-black text-xl mb-4 truncate text-blue-400">{lastSummary?.name}</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Distance</p>
-                                        <p className="text-2xl font-black">{(lastSummary?.distance/1000).toFixed(2)}<span className="text-sm">km</span></p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Time</p>
-                                        <p className="text-2xl font-black">{formatTime(lastSummary?.duration)}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button onClick={() => handleShareAction(lastSummary)} className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 mb-4 fitness-card active:translate-y-1">
-                                <Icon name="Share2" size={20} color="#0f172a" /> Share Performance
-                            </button>
-                            
-                            <button onClick={handleCopy} className="w-full py-5 bg-slate-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 mb-8 border border-slate-700 active:bg-slate-700 transition-colors">
-                                {copied ? <Icon name="CheckCircle" size={20} color="#4ade80" /> : <Icon name="Copy" size={20} color="white" />} 
-                                {copied ? "Copied Link!" : "Copy Public Link"}
-                            </button>
-
-                            <button onClick={() => setView('run')} className="text-xs font-black text-slate-500 uppercase tracking-widest underline decoration-slate-600 underline-offset-4 active:text-white transition-colors">
-                                Continue to Summary
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
-            const HistoryView = () => (
-                <div className="absolute inset-0 z-[100] bg-slate-100 text-slate-900 flex flex-col animate__animated animate__slideInRight w-full h-full">
-                    <header className="px-6 pt-16 pb-6 border-b-2 border-slate-900 bg-white flex items-center justify-between sticky top-0 z-20 shadow-[0_4px_0px_#0f172a]">
-                        <button onClick={() => setView('stats')} className="p-3 bg-slate-100 rounded-xl active:scale-95 transition-transform border border-slate-300">
-                            <Icon name="ChevronLeft" size={24} color="#0f172a"/>
-                        </button>
-                        <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900 flex items-center gap-2">
-                            <Icon name="History" size={24} color="#0f172a" /> Run History
-                        </h2>
-                        <div className="w-12"></div>
-                    </header>
-                    <div className="flex-1 overflow-y-auto p-6 custom-scroll space-y-4 bg-slate-100">
-                        {runs.length === 0 ? (
-                            <div className="p-10 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-300 mt-10">
-                                <Icon name="Activity" size={48} color="#cbd5e1" className="mx-auto mb-4" />
-                                <p className="text-slate-400 font-bold">No runs recorded yet.</p>
-                            </div>
-                        ) : (
-                            runs.map(run => (
-                                <div key={run.id} className="p-6 bg-white rounded-[2rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] relative overflow-hidden group">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="pr-4">
-                                            <p className="font-black text-slate-900 uppercase text-lg tracking-tight leading-tight">{run.name || "Mission"}</p>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-1">
-                                                <Icon name="Calendar" size={10} color="#64748b"/>
-                                                {new Date(run.timestamp).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 mb-6">
-                                        <div className="bg-slate-50 p-3 rounded-xl text-center">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase">Dist</p>
-                                            <p className="font-black text-blue-600">{(run.distance/1000).toFixed(2)}k</p>
-                                        </div>
-                                        <div className="bg-slate-50 p-3 rounded-xl text-center">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase">Time</p>
-                                            <p className="font-black text-slate-800">{formatTime(run.duration)}</p>
-                                        </div>
-                                        <div className="bg-slate-50 p-3 rounded-xl text-center">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase">Pace</p>
-                                            <p className="font-black text-slate-800">{run.pace}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => handleShareAction(run)} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex justify-center items-center gap-2 active:scale-95 transition-transform">
-                                            <Icon name="Share2" size={14} color="white" /> Share
-                                        </button>
-                                        <button onClick={() => confirmDeleteRun(run.id)} className="w-12 h-[38px] bg-red-100 text-red-600 rounded-xl flex justify-center items-center active:scale-95 transition-transform border border-red-200">
-                                            <Icon name="Trash2" size={16} color="#dc2626" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                        <div className="h-24"></div>
-                    </div>
-                </div>
-            );
-
-            const PublicShareView = () => {
-                if(!sharedRunData) return null;
-                const r = sharedRunData;
-                const km = (r.distance/1000).toFixed(2);
-                
-                let tagline = "Discipline > Motivation";
-                if(km >= 10) tagline = "Endurance Champion";
-                else if(r.duration < 1800 && km >= 5) tagline = "Speed Demon";
-
-                return (
-                    <div className="absolute inset-0 z-[500] bg-slate-950 text-white flex flex-col justify-center items-center animate__animated animate__fadeIn w-full h-full overflow-hidden">
-                        <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
-                        <div className="absolute inset-0 running-bg-glow opacity-70 pointer-events-none"></div>
-                        
-                        <div className="relative z-10 w-full max-w-sm px-8 text-center animate__animated animate__zoomIn">
-                            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(37,99,235,0.6)] border border-blue-400">
-                                <Icon name="Activity" size={32} color="white" />
-                            </div>
-                            <h1 className="text-3xl font-black tracking-tighter mb-1 uppercase leading-tight">{r.name}</h1>
-                            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mb-12 flex items-center justify-center gap-2">
-                                <Icon name="MapPin" size={12} color="#94a3b8" /> Runo Performance
-                            </p>
-
-                            <div className="relative w-64 h-64 mx-auto mb-10">
-                                <svg className="absolute inset-0 w-full h-full -rotate-90">
-                                    <circle cx="50%" cy="50%" r="120" stroke="rgba(255,255,255,0.05)" strokeWidth="12" fill="transparent" />
-                                    <circle cx="50%" cy="50%" r="120" stroke="#22d3ee" strokeWidth="12" fill="transparent" strokeDasharray={2 * Math.PI * 120} strokeDashoffset="0" strokeLinecap="round" style={{filter: 'drop-shadow(0 0 10px rgba(34, 211, 238, 0.6))'}} />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <p className="text-6xl font-black tracking-tighter hero-distance-glow tabular-nums">{km}</p>
-                                    <p className="text-sm font-black text-neonCyan uppercase tracking-widest mt-1">Kilometers</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mb-10">
-                                <div className="glass-metric p-5 rounded-3xl">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time</p>
-                                    <p className="text-2xl font-black text-white">{formatTime(r.duration)}</p>
-                                </div>
-                                <div className="glass-metric p-5 rounded-3xl">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pace</p>
-                                    <p className="text-2xl font-black text-white">{r.pace}</p>
-                                </div>
-                            </div>
-
-                            <div className="inline-block bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20 mb-12">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">⚡ {tagline}</p>
-                            </div>
-
-                            <button onClick={() => { window.location.hash = ''; window.location.reload(); }} className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest fitness-card active:scale-95 transition-transform shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900">
-                                Start Your Own Run
-                            </button>
-                        </div>
-                    </div>
-                );
-            };
-
             const Run = () => { 
-                const missionGoalMeters = 2500; 
+                const missionGoalMeters = 2500; // 2.5km goal from Home screen
                 const displayDistance = distance < 1000 ? Math.floor(distance) : (distance / 1000).toFixed(2);
-                const displayUnit = distance < 1000 ? "M" : "KM";
+                const displayUnit = distance < 1000 ? "m" : "km";
                 const progressPercent = Math.min(100, (distance / missionGoalMeters) * 100);
 
+                // GPS Dot Logic
                 const getGpsDotColor = () => {
                     if (gpsStatus === "ERROR") return "bg-red-500";
                     if (gpsStatus === "POOR SIGNAL" || gpsStatus === "LOCKING...") return "bg-orange-400";
-                    if (gpsStatus === "WAITING" || gpsStatus === "CALIBRATING") return "bg-slate-500";
+                    if (gpsStatus === "WAITING") return "bg-slate-500";
                     return "bg-neonCyan";
                 };
 
+                // Post-Run Summary View
                 if (lastSummary && !isRunning) {
                     return (
                         <div className="absolute inset-0 z-[60] bg-slate-100 text-slate-900 p-8 flex flex-col justify-between overflow-hidden animate__animated animate__fadeIn w-full h-full">
@@ -1968,7 +944,7 @@
                                     </div>
                                     <div className="p-6 bg-white rounded-[2.5rem] fitness-card">
                                         <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Calories</p>
-                                        <p className="text-2xl font-black text-slate-900">~{lastSummary.calories || Math.floor((lastSummary.distance/1000) * 75 * 1.036)}<span className="text-xs text-slate-500">kcal</span></p>
+                                        <p className="text-2xl font-black text-slate-900">~{Math.floor((lastSummary.distance/1000) * 75 * 1.036)}<span className="text-xs text-slate-500">kcal</span></p>
                                     </div>
                                 </div>
 
@@ -1989,99 +965,133 @@
                                     )}
                                 </div>
                             </div>
-                            <div className="pb-8 pt-4 space-y-3">
-                                <button onClick={() => handleShareAction(lastSummary)} className="w-full py-5 bg-white text-slate-900 rounded-[2rem] font-black text-sm uppercase tracking-widest border-2 border-slate-900 flex justify-center items-center gap-2 shadow-[2px_4px_0px_#0f172a] active:translate-y-1 transition-all">
-                                    <Icon name="Share2" size={20} color="#0f172a" /> Share Link
-                                </button>
+                            <div className="pb-8 pt-4">
                                 <button onClick={() => setView('home')} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-xl fitness-card uppercase tracking-widest active:translate-y-1 active:shadow-[2px_3px_0px_#0f172a] transition-all">RETURN HOME</button>
                             </div>
                         </div>
                     );
                 }
 
+                // Active Running Screen View
                 return (
                     <div className={`absolute inset-0 z-[60] bg-slate-950 text-white flex flex-col justify-between animate__animated animate__slideInUp overflow-hidden overscroll-none w-full h-full transition-all duration-700 ${isPaused ? 'brightness-50' : 'brightness-100'}`}>
+                        {/* Background Layer */}
                         <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
                         <div className="absolute inset-0 running-bg-glow pointer-events-none"></div>
 
-                        <header className="relative flex justify-between items-center z-10 p-6 pt-12 w-full">
-                            {/* Top Arc from screenshot */}
-                            <div className="absolute top-0 left-0 w-full flex justify-center pointer-events-none">
-                                <svg width="200" height="40" viewBox="0 0 200 40">
-                                    <path d="M 0,40 Q 100,-10 200,40" fill="transparent" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-                                    <circle cx="100" cy="15" r="4" fill="#22d3ee" />
-                                </svg>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800">
-                                <div className={`w-2 h-2 rounded-full ${getGpsDotColor()} ${gpsStatus === 'RECORDING' ? '' : 'gps-pulse'}`} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-300">
+                        {/* Modern GPS Status Top Bar */}
+                        <header className="relative flex justify-between items-center z-10 p-8 pt-12">
+                            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                                <div className={`w-2 h-2 rounded-full ${getGpsDotColor()} ${gpsStatus === 'RECORDING' ? '' : 'gps-pulse shadow-[0_0_8px_#22d3ee]'}`} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/70">
                                     {gpsStatus === "RECORDING" ? "GPS ACTIVE" : gpsStatus}
                                 </span>
                             </div>
                             
-                            <div className="bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800">
-                                <p className="text-[10px] font-black text-neonCyan uppercase tracking-[0.1em]">
+                            <div className="bg-white/5 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                                <p className="text-[9px] font-black text-neonCyan uppercase tracking-widest">
                                     ELITE SENSORS
                                 </p>
                             </div>
                         </header>
                         
-                        {/* Distance Display matched to screenshot */}
-                        <div className="relative flex-1 flex flex-col items-center justify-center w-full px-4 mt-8">
-                            <div className="z-10 text-center animate__animated animate__zoomIn flex flex-col items-center">
-                                <h1 className="text-[120px] font-black leading-[0.9] tracking-tighter tabular-nums text-white hero-distance-glow number-pop" style={{ textShadow: '0 0 40px rgba(34,211,238,0.4)' }}>
-                                    {displayDistance}
-                                </h1>
-                                <p className="text-2xl font-black text-neonCyan uppercase tracking-widest mt-2">
-                                    {displayUnit}
-                                </p>
+                        {/* Hero Center Display */}
+                        <div className="relative flex-1 flex flex-col items-center justify-center w-full px-4 mb-4">
+                            {/* breathing / Pulse Circular Progress Ring */}
+                            <div className="relative flex items-center justify-center">
+                                <svg className="absolute w-[300px] h-[300px] sm:w-[340px] sm:h-[340px] -rotate-90 pointer-events-none">
+                                    {/* Track Ring */}
+                                    <circle cx="50%" cy="50%" r="135" stroke="rgba(255,255,255,0.03)" strokeWidth="12" fill="transparent" />
+                                    {/* Active Ring */}
+                                    <circle 
+                                        cx="50%" 
+                                        cy="50%" 
+                                        r="135" 
+                                        stroke="#22d3ee" 
+                                        strokeWidth="12" 
+                                        fill="transparent" 
+                                        strokeDasharray={2 * Math.PI * 135} 
+                                        style={{ 
+                                            strokeDashoffset: 2 * Math.PI * 135 - (progressPercent / 100) * (2 * Math.PI * 135),
+                                            filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                                        }} 
+                                        strokeLinecap="round" 
+                                        className={`transition-all duration-1000 ease-out ${!isPaused ? 'breathing-pulse' : ''}`} 
+                                    />
+                                </svg>
+
+                                <div className="z-10 text-center animate__animated animate__zoomIn">
+                                    <h1 className="text-[90px] sm:text-[110px] font-black leading-none tracking-tighter tabular-nums text-white hero-distance-glow number-pop">
+                                        {displayDistance}
+                                    </h1>
+                                    <p className="text-xl font-black text-neonCyan/60 uppercase tracking-[0.5em] mt-2 translate-x-1">
+                                        {displayUnit}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="px-6 mb-12 w-full max-w-lg mx-auto z-10">
-                            <div className="grid grid-cols-3 gap-4">
-                                {/* Time */}
-                                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 flex flex-col items-center justify-center shadow-lg">
-                                    <Icon name="Timer" size={18} color="#64748b" className="mb-2" />
-                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Time</p>
-                                    <p className="text-xl font-black text-white tabular-nums">{formatTime(elapsed)}</p>
+                        {/* Glassmorphic Metrics Row */}
+                        <div className="px-6 mb-8 w-full max-w-lg mx-auto z-10">
+                            <div className="grid grid-cols-3 gap-3">
+                                {/* Time Card */}
+                                <div className="glass-metric p-4 rounded-3xl text-center relative overflow-hidden group">
+                                    <div className="flex justify-center mb-2">
+                                        <Icon name="Timer" size={16} color="#94a3b8" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-1">Time</p>
+                                    <p className="text-lg font-black text-white tabular-nums">{formatTime(elapsed)}</p>
                                 </div>
-                                {/* Pace */}
-                                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 flex flex-col items-center justify-center shadow-lg">
-                                    <Icon name="Wind" size={18} color="#64748b" className="mb-2" />
-                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Pace</p>
-                                    <p className="text-xl font-black text-white tabular-nums">{formatPace(elapsed, distance)}</p>
+
+                                {/* Pace Card */}
+                                <div className="glass-metric p-4 rounded-3xl text-center">
+                                    <div className="flex justify-center mb-2">
+                                        <Icon name="Wind" size={16} color="#94a3b8" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-1">Pace</p>
+                                    <p className="text-lg font-black text-white tabular-nums">{formatPace(elapsed, distance)}</p>
                                 </div>
-                                {/* Speed */}
-                                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 flex flex-col items-center justify-center shadow-lg">
-                                    <Icon name="TrendingUp" size={18} color="#64748b" className="mb-2" />
-                                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Speed</p>
-                                    <p className="text-xl font-black text-white tabular-nums">{currentSpeed > 0 ? currentSpeed.toFixed(1) : "0.0"}</p>
+
+                                {/* Speed Card */}
+                                <div className="glass-metric p-4 rounded-3xl text-center">
+                                    <div className="flex justify-center mb-2">
+                                        <Icon name="TrendingUp" size={16} color="#94a3b8" />
+                                    </div>
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest mb-1">Speed</p>
+                                    <p className="text-lg font-black text-white tabular-nums">{currentSpeed > 0 ? currentSpeed.toFixed(1) : "0.0"}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="relative w-full flex justify-center items-center gap-6 p-8 pb-16 z-20">
-                            <button 
-                                onClick={togglePause} 
-                                className="w-16 h-16 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center active:scale-90 transition-all duration-200"
-                            >
-                                {isPaused ? <Icon name="Play" size={24} color="white"/> : <Icon name="Pause" size={24} color="white"/>}
-                            </button>
+                        {/* Control Area */}
+                        <div className="relative w-full flex flex-col items-center gap-8 p-8 pb-16 z-20">
+                            <div className="flex items-center gap-8">
+                                {/* Pause Button */}
+                                <button 
+                                    onClick={togglePause} 
+                                    className="control-button-pause w-20 h-20 rounded-full flex items-center justify-center active:scale-90 transition-all duration-200"
+                                >
+                                    {isPaused ? <Icon name="Play" size={28} color="white"/> : <Icon name="Pause" size={28} color="white"/>}
+                                </button>
 
-                            <button 
-                                onClick={stopRun} 
-                                className="relative w-24 h-24 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 group"
-                            >
-                                <div className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"></div>
-                                <div className="absolute inset-2 rounded-full bg-red-600/40"></div>
-                                <div className="relative w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.6)]">
-                                    <Icon name="Square" size={24} color="white" />
-                                </div>
-                            </button>
+                                {/* Stop Button */}
+                                <button 
+                                    onClick={stopRun} 
+                                    className="control-button-stop w-28 h-28 rounded-full flex items-center justify-center border-4 border-white/10 active:scale-95 transition-all duration-300 group"
+                                >
+                                    <div className="bg-white/10 p-4 rounded-full group-active:scale-75 transition-transform">
+                                        <Icon name="Square" size={32} color="white" />
+                                    </div>
+                                </button>
+                            </div>
+                            
+                            {/* Helpful Tip or State */}
+                            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] h-4">
+                                {isPaused ? "SESSION PAUSED" : (distance > missionGoalMeters ? "MISSION ACCOMPLISHED" : "KEEP PUSHING")}
+                            </p>
                         </div>
 
+                        {/* Paused Blur Overlay */}
                         {isPaused && (
                             <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
                                 <div className="text-center animate__animated animate__fadeIn">
@@ -2142,7 +1152,8 @@
                             <Icon name="ChevronRight" size={24} color="white" />
                         </a>
 
-                        <div onClick={handleLogoutRequest} className="p-8 bg-white rounded-[2rem] flex justify-between items-center fitness-card active:translate-y-1 cursor-pointer">
+                        {/* CHANGED: Text updated to Logout */}
+                        <div onClick={() => { if(confirm("Are you sure? This will log you out and clear local history.")) { localStorage.clear(); location.reload(); }}} className="p-8 bg-white rounded-[2rem] flex justify-between items-center fitness-card active:translate-y-1">
                             <div className="flex items-center gap-5">
                                 <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center border border-slate-200">
                                     <Icon name="Settings" size={24} color="#64748b" />
@@ -2183,38 +1194,27 @@
                 </div>
             );
 
+            // Nav Configuration
             const navItems = [
                 { id: 'home', icon: 'HomeSolid', label: 'HOME' }, 
                 { id: 'stats', icon: 'BarChart2', label: 'STATS' }, 
-                { id: 'workspace', icon: 'Archive', label: 'VAULT' },
                 { id: 'profile', icon: 'User', label: 'PROFILE' } 
             ];
-
-            const hideDockViews = ['splash', 'onboarding', 'verify_email', 'privacy', 'save_run', 'post_save_share', 'public_share', 'history'];
 
             return (
                 <div className="fixed inset-0 w-full h-full bg-slate-100 overflow-hidden">
                     {view === 'splash' && Splash()}
                     {view === 'home' && Home()}
                     {view === 'stats' && Stats()}
-                    {view === 'workspace' && WorkspaceView()}
                     {view === 'run' && Run()}
                     {view === 'profile' && Profile()}
                     {view === 'privacy' && Privacy()}
                     {view === 'onboarding' && Onboarding()}
-                    {view === 'verify_email' && VerifyEmailView()}
-                    {view === 'save_run' && SaveRunModal()}
-                    {view === 'post_save_share' && PostSaveShareView()}
-                    {view === 'history' && HistoryView()}
-                    {view === 'public_share' && PublicShareView()}
 
-                    {/* Universal Custom UI Modals */}
-                    <GlobalModal />
-                    <WorkspaceModal />
-
-                    {!hideDockViews.includes(view) && (
+                    {/* FIXED BOTTOM NAVIGATION */}
+                    {['home', 'profile', 'stats'].includes(view) && (
                         <div className="nav-dock-container pointer-events-none">
-                            <nav className="nav-pill pointer-events-auto mx-auto w-full max-w-[400px]">
+                            <nav className="nav-pill pointer-events-auto mx-auto w-[85%] max-w-[350px]">
                                 {navItems.map((item) => {
                                     const isActive = view === item.id;
                                     return (
