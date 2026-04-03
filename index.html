@@ -260,7 +260,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         // NEW CLOUD IMPORTS ADDED WITHOUT REMOVING ANY FEATURES
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -314,7 +314,12 @@
                     Trash2: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
                     Copy: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
                     CheckCircle: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
-                    History: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>`
+                    History: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>`,
+                    Archive: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`,
+                    Folder: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
+                    FileText: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+                    Users: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+                    Plus: `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="${className}"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`
                 };
                 setSvgHtml(icons[name] || '');
             }, [name, size, className, color]);
@@ -478,6 +483,13 @@
             const [vibe, setVibe] = useState("");
             const [modalData, setModalData] = useState(null);
 
+            // Workspace Addition States
+            const [folders, setFolders] = useState([]);
+            const [files, setFiles] = useState([]);
+            const [notes, setNotes] = useState([]);
+            const [teamMembers, setTeamMembers] = useState([]);
+            const [wsModal, setWsModal] = useState(null); // { type: 'folder' | 'file' | 'note' | 'team' }
+
             // UI Render State
             const [isRunning, setIsRunning] = useState(false);
             const [isPaused, setIsPaused] = useState(false);
@@ -587,6 +599,7 @@
                                         if (savedUser) {
                                             newUser = JSON.parse(savedUser);
                                         } else {
+                                            // Pull in dynamic values from Firebase Auth if available (like Google Sign In Name/Photo)
                                             newUser = { 
                                                 name: firebaseUser.displayName || "Athlete", 
                                                 streak: 0, 
@@ -660,6 +673,36 @@
                 
                 return () => clearTimeout(timer);
             }, []); // Removed `view` dependency to prevent infinite loops and forced re-routing
+
+            // WORKSPACE DATA FETCHING
+            useEffect(() => {
+                if (!userData || !userData.uid) return;
+                const uid = userData.uid;
+
+                const foldersRef = collection(db, 'artifacts', appId, 'users', uid, 'folders');
+                const unsubFolders = onSnapshot(foldersRef, snap => {
+                    setFolders(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                }, err => console.error("Folders error", err));
+
+                const filesRef = collection(db, 'artifacts', appId, 'users', uid, 'files');
+                const unsubFiles = onSnapshot(filesRef, snap => {
+                    setFiles(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                }, err => console.error("Files error", err));
+
+                const notesRef = collection(db, 'artifacts', appId, 'users', uid, 'notes');
+                const unsubNotes = onSnapshot(notesRef, snap => {
+                    setNotes(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                }, err => console.error("Notes error", err));
+
+                const teamRef = collection(db, 'artifacts', appId, 'users', uid, 'teamMembers');
+                const unsubTeam = onSnapshot(teamRef, snap => {
+                    setTeamMembers(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                }, err => console.error("Team error", err));
+
+                return () => {
+                    unsubFolders(); unsubFiles(); unsubNotes(); unsubTeam();
+                };
+            }, [userData?.uid]);
 
             const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
@@ -1045,10 +1088,132 @@
                 );
             };
 
+            // Custom Dynamic Workspace Creation Modal
+            const WorkspaceModal = () => {
+                if (!wsModal) return null;
+                const [form, setForm] = useState({ name: '', title: '', content: '', size: '', role: '', folderId: '' });
+                const [isSaving, setIsSaving] = useState(false);
+
+                const handleSave = async () => {
+                    if (!userData?.uid) return;
+                    setIsSaving(true);
+                    try {
+                        const uid = userData.uid;
+                        const pathBase = ['artifacts', appId, 'users', uid];
+                        
+                        if (wsModal.type === 'folder') {
+                            if(!form.name) return;
+                            await addDoc(collection(db, ...pathBase, 'folders'), { name: form.name, createdAt: Date.now() });
+                        } else if (wsModal.type === 'file') {
+                            if(!form.name) return;
+                            await addDoc(collection(db, ...pathBase, 'files'), { name: form.name, folderId: form.folderId || null, size: form.size || '1 KB', createdAt: Date.now() });
+                        } else if (wsModal.type === 'note') {
+                            if(!form.title) return;
+                            await addDoc(collection(db, ...pathBase, 'notes'), { title: form.title, content: form.content || '', createdAt: Date.now() });
+                        } else if (wsModal.type === 'team') {
+                            if(!form.name) return;
+                            await addDoc(collection(db, ...pathBase, 'teamMembers'), { name: form.name, role: form.role || 'Member', createdAt: Date.now() });
+                        }
+                        setWsModal(null);
+                    } catch(e) {
+                        console.error("Save error", e);
+                    } finally {
+                        setIsSaving(false);
+                    }
+                };
+
+                const getTitle = () => {
+                    switch(wsModal.type) {
+                        case 'folder': return 'New Folder';
+                        case 'file': return 'Add File';
+                        case 'note': return 'New Note';
+                        case 'team': return 'Add Member';
+                        default: return '';
+                    }
+                };
+
+                return (
+                    <div className="absolute inset-0 z-[1000] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6 animate__animated animate__fadeIn">
+                        <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm border-2 border-slate-900 shadow-[4px_6px_0px_#0f172a] animate__animated animate__zoomIn animate__faster">
+                            <h3 className="text-2xl font-black text-slate-900 uppercase mb-6 leading-tight">{getTitle()}</h3>
+                            
+                            <div className="space-y-4 mb-8">
+                                {(wsModal.type === 'folder' || wsModal.type === 'file' || wsModal.type === 'team') && (
+                                    <input 
+                                        type="text"
+                                        placeholder="Name"
+                                        value={form.name}
+                                        onChange={e => setForm({...form, name: e.target.value})}
+                                        className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
+                                    />
+                                )}
+                                {wsModal.type === 'note' && (
+                                    <>
+                                        <input 
+                                            type="text"
+                                            placeholder="Note Title"
+                                            value={form.title}
+                                            onChange={e => setForm({...form, title: e.target.value})}
+                                            className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
+                                        />
+                                        <textarea 
+                                            placeholder="Note Content"
+                                            value={form.content}
+                                            onChange={e => setForm({...form, content: e.target.value})}
+                                            className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors h-24 resize-none"
+                                        />
+                                    </>
+                                )}
+                                {wsModal.type === 'file' && (
+                                    <input 
+                                        type="text"
+                                        placeholder="Size (e.g. 2 MB)"
+                                        value={form.size}
+                                        onChange={e => setForm({...form, size: e.target.value})}
+                                        className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
+                                    />
+                                )}
+                                {wsModal.type === 'team' && (
+                                    <input 
+                                        type="text"
+                                        placeholder="Role (Optional)"
+                                        value={form.role}
+                                        onChange={e => setForm({...form, role: e.target.value})}
+                                        className="w-full bg-slate-100 border-2 border-slate-300 text-slate-900 rounded-xl p-4 text-sm font-bold focus:outline-none focus:border-blue-600 transition-colors"
+                                    />
+                                )}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button onClick={() => setWsModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-xl font-black uppercase text-xs border-2 border-transparent active:scale-95 transition-transform">
+                                    Cancel
+                                </button>
+                                <button onClick={handleSave} disabled={isSaving} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black uppercase text-xs shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900 active:translate-y-1 active:shadow-none transition-all disabled:opacity-70 flex justify-center items-center gap-2">
+                                    {isSaving ? <Icon name="Loader2" className="animate-spin" size={16} /> : 'Save'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
             const Splash = () => (
                 <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center animate__animated animate__fadeIn z-[200] w-full h-full">
-                    <div className="w-24 h-24 bg-blue-600 rounded-[2rem] rotate-45 flex items-center justify-center shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900 animate__animated animate__zoomIn">
-                        <Icon name="Activity" size={48} color="white" className="-rotate-45" />
+                    {/* Elite Circular Cropped Logo Animation */}
+                    <div className="w-32 h-32 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] border-4 border-slate-800 animate__animated animate__zoomIn overflow-hidden bg-black relative">
+                        <img 
+                            src="WhatsApp%20Image%202026-04-03%20at%204.47.26%20PM.jpeg" 
+                            alt="Runo Logo" 
+                            className="w-full h-full object-cover scale-[1.25] relative z-10" 
+                            onError={(e) => { 
+                                // Image loaded error fallback disabled to ensure display
+                                console.log("Logo load delayed");
+                            }}
+                        />
+                        {/* Fallback in case the image path is wrong */}
+                        <div id="fallback-logo" style={{display: 'none'}} className="absolute inset-0 items-center justify-center bg-blue-600 z-20">
+                            <Icon name="Activity" size={48} color="white" />
+                        </div>
                     </div>
                 </div>
             );
@@ -1112,8 +1277,10 @@
 
                 return (
                     <div className="absolute inset-0 bg-slate-900 text-white p-8 flex flex-col justify-center items-center text-center z-[150] animate__animated animate__fadeIn w-full h-full">
-                        <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900">
-                            <Icon name="User" size={48} color="white" />
+                        <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center mb-8 shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900 overflow-hidden relative">
+                            {/* Uses the same uploaded image file from the prompt constraints */}
+                            <img src="WhatsApp%20Image%202026-04-03%20at%204.47.26%20PM.jpeg" alt="Logo" className="w-full h-full object-cover scale-[1.25] absolute inset-0 z-10" onError={(e) => { console.log("Logo loading..."); }} />
+                            <Icon name="User" size={48} color="white" className="relative z-0" />
                         </div>
                         <h1 className="text-6xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp">Welcome.</h1>
                         <p className="text-slate-300 mb-12 uppercase tracking-widest text-xs font-bold leading-relaxed">Your fitness journey<br/>begins now.</p>
@@ -1370,6 +1537,121 @@
                     </div>
                 );
             };
+
+            const WorkspaceView = () => (
+                <div className="absolute inset-0 px-6 pt-6 overflow-y-auto custom-scroll animate__animated animate__fadeIn w-full h-full pb-32">
+                    <IndianClock />
+                    <header className="mb-8 mt-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Workspace</p>
+                        <h1 className="text-4xl font-black tracking-tighter text-slate-900">Vault.</h1>
+                    </header>
+
+                    {/* FILES & FOLDERS SECTION */}
+                    <div className="mb-10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
+                                <Icon name="Folder" size={20} color="#0f172a"/> My Files
+                            </h3>
+                            <div className="flex gap-2">
+                                <button onClick={() => setWsModal({type: 'folder'})} className="p-2 bg-slate-900 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
+                                    <Icon name="Folder" size={16} color="white" />
+                                </button>
+                                <button onClick={() => setWsModal({type: 'file'})} className="p-2 bg-blue-600 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
+                                    <Icon name="Plus" size={16} color="white" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {folders.length === 0 && files.length === 0 && (
+                                <div className="p-8 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-300">
+                                    <p className="text-slate-400 font-bold text-sm">Vault is empty.</p>
+                                </div>
+                            )}
+
+                            {/* Folders */}
+                            {folders.map(folder => (
+                                <div key={folder.id} className="p-5 bg-slate-900 text-white rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center gap-4 cursor-pointer hover:-translate-y-1 transition-transform">
+                                    <div className="w-10 h-10 bg-slate-800 rounded-xl flex justify-center items-center">
+                                        <Icon name="Folder" size={20} color="#60a5fa" />
+                                    </div>
+                                    <p className="font-black text-white uppercase text-sm tracking-tight flex-1 truncate">{folder.name}</p>
+                                </div>
+                            ))}
+
+                            {/* Files */}
+                            {files.map(file => (
+                                <div key={file.id} className="p-5 bg-white rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center gap-4 hover:-translate-y-1 transition-transform">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex justify-center items-center border border-blue-200">
+                                        <Icon name="FileText" size={20} color="#2563eb" />
+                                    </div>
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="font-black text-slate-900 uppercase text-sm tracking-tight truncate">{file.name}</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{file.size}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* NOTES SECTION */}
+                    <div className="mb-10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
+                                <Icon name="FileText" size={20} color="#0f172a"/> My Notes
+                            </h3>
+                            <button onClick={() => setWsModal({type: 'note'})} className="p-2 bg-purple-600 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
+                                <Icon name="Plus" size={16} color="white" />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            {notes.length === 0 && (
+                                <div className="col-span-2 p-8 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-300">
+                                    <p className="text-slate-400 font-bold text-sm">No notes created.</p>
+                                </div>
+                            )}
+                            {notes.map(note => (
+                                <div key={note.id} className="p-5 bg-purple-50 rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex flex-col h-32 hover:-translate-y-1 transition-transform">
+                                    <p className="font-black text-slate-900 uppercase text-xs tracking-tight line-clamp-2 mb-2">{note.title}</p>
+                                    <p className="text-[10px] font-semibold text-slate-600 leading-relaxed line-clamp-3 overflow-hidden">{note.content}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* TEAM SECTION */}
+                    <div className="mb-10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-black text-xl uppercase text-slate-900 flex items-center gap-2">
+                                <Icon name="Users" size={20} color="#0f172a"/> Team
+                            </h3>
+                            <button onClick={() => setWsModal({type: 'team'})} className="p-2 bg-slate-900 text-white rounded-lg active:scale-95 transition-transform shadow-[2px_3px_0px_#0f172a] border-2 border-slate-900">
+                                <Icon name="Plus" size={16} color="white" />
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            {teamMembers.length === 0 && (
+                                <div className="p-8 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-300">
+                                    <p className="text-slate-400 font-bold text-sm">No team members added.</p>
+                                </div>
+                            )}
+                            {teamMembers.map(member => (
+                                <div key={member.id} className="p-5 bg-white rounded-[1.5rem] border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center justify-between hover:-translate-y-1 transition-transform">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-slate-200 rounded-full flex justify-center items-center border border-slate-300">
+                                            <Icon name="User" size={18} color="#64748b" />
+                                        </div>
+                                        <p className="font-black text-slate-900 uppercase text-sm tracking-tight">{member.name}</p>
+                                    </div>
+                                    {member.role && (
+                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">{member.role}</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
 
             const SaveRunModal = () => {
                 const suggestions = getSmartSuggestions();
@@ -1850,6 +2132,7 @@
             const navItems = [
                 { id: 'home', icon: 'HomeSolid', label: 'HOME' }, 
                 { id: 'stats', icon: 'BarChart2', label: 'STATS' }, 
+                { id: 'workspace', icon: 'Archive', label: 'VAULT' },
                 { id: 'profile', icon: 'User', label: 'PROFILE' } 
             ];
 
@@ -1860,6 +2143,7 @@
                     {view === 'splash' && Splash()}
                     {view === 'home' && Home()}
                     {view === 'stats' && Stats()}
+                    {view === 'workspace' && WorkspaceView()}
                     {view === 'run' && Run()}
                     {view === 'profile' && Profile()}
                     {view === 'privacy' && Privacy()}
@@ -1870,12 +2154,13 @@
                     {view === 'history' && HistoryView()}
                     {view === 'public_share' && PublicShareView()}
 
-                    {/* NEW PRO LOGIC: Universal Custom UI Modal for cross-browser safe interactions */}
+                    {/* Universal Custom UI Modals */}
                     <GlobalModal />
+                    <WorkspaceModal />
 
                     {!hideDockViews.includes(view) && (
                         <div className="nav-dock-container pointer-events-none">
-                            <nav className="nav-pill pointer-events-auto mx-auto w-[85%] max-w-[350px]">
+                            <nav className="nav-pill pointer-events-auto mx-auto w-full max-w-[400px]">
                                 {navItems.map((item) => {
                                     const isActive = view === item.id;
                                     return (
