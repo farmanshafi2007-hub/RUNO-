@@ -467,6 +467,10 @@
             // --- PRO LEVEL ADDITIONS ---
             const [pendingRun, setPendingRun] = useState(null);
             const [sharedRunData, setSharedRunData] = useState(null);
+            
+            // ADDED FOR FIX: Hoisted from views to prevent React Hooks crash (white screen fix)
+            const [inputName, setInputName] = useState("");
+            const [copied, setCopied] = useState(false);
 
             // AI States
             const [aiBriefing, setAiBriefing] = useState(null);
@@ -662,6 +666,7 @@
 
                 // MUCH STRICTER threshold: Force naming modal even on small runs (e.g. 2 meters or 5 seconds)
                 if (finalDistance > 2 || finalElapsed > 5) { 
+                    setInputName(""); // Reset name for fresh entry
                     setPendingRun({
                         id: Date.now().toString(),
                         timestamp: Date.now(),
@@ -1089,7 +1094,6 @@
             };
 
             const SaveRunModal = () => {
-                const [inputName, setInputName] = useState("");
                 const suggestions = getSmartSuggestions();
 
                 return (
@@ -1140,8 +1144,6 @@
             };
 
             const PostSaveShareView = () => {
-                const [copied, setCopied] = useState(false);
-                
                 const handleCopy = () => {
                     const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encodeRunData(lastSummary)}`;
                     const textArea = document.createElement("textarea");
