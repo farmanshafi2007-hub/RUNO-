@@ -259,8 +259,10 @@
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // NEW CLOUD IMPORTS ADDED WITHOUT REMOVING ANY FEATURES
+        // FIRESTORE CLOUD IMPORTS
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // FIREBASE STORAGE IMPORTS (ADDED FOR PROFILE IMAGES)
+        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -277,8 +279,10 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        // REAL-TIME FIRESTORE DATABASE INITIALIZATION
+        
+        // REAL-TIME FIRESTORE & STORAGE INITIALIZATION
         const db = getFirestore(app);
+        const storage = getStorage(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'runo-default';
 
         // --- ICONS ---
@@ -587,32 +591,41 @@
                                 const savedRuns = localStorage.getItem('runo_history_' + firebaseUser.uid);
                                 
                                 // ---- NEW FIRESTORE SYNC CODE (REAL-TIME ISOLATION) ----
-                                const userDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'data');
+                                const userDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid);
                                 getDoc(userDocRef).then((docSnap) => {
                                     if (docSnap.exists()) {
                                         const remoteUserData = docSnap.data();
                                         setUserData(remoteUserData);
                                         localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(remoteUserData));
                                     } else {
-                                        // Use existing local fallback/creation
-                                        let newUser;
-                                        if (savedUser) {
-                                            newUser = JSON.parse(savedUser);
-                                        } else {
-                                            // Pull in dynamic values from Firebase Auth if available (like Google Sign In Name/Photo)
-                                            newUser = { 
-                                                name: firebaseUser.displayName || "Athlete", 
-                                                streak: 0, 
-                                                totalKm: 0, 
-                                                shields: 1, 
-                                                joined: Date.now(), 
-                                                profilePic: firebaseUser.photoURL || null, 
-                                                uid: firebaseUser.uid 
-                                            };
-                                        }
-                                        setUserData(newUser);
-                                        localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(newUser));
-                                        setDoc(userDocRef, newUser).catch(err => console.error(err)); // Create in Firestore
+                                        // Check legacy profile/data path just in case
+                                        const legacyProfileDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'data');
+                                        getDoc(legacyProfileDocRef).then((legacySnap) => {
+                                            let newUser;
+                                            if (legacySnap.exists()) {
+                                                newUser = legacySnap.data();
+                                            } else if (savedUser) {
+                                                newUser = JSON.parse(savedUser);
+                                            } else {
+                                                // Pull in dynamic values from Firebase Auth if available (like Google Sign In Name/Photo)
+                                                newUser = { 
+                                                    name: firebaseUser.displayName || "Athlete", 
+                                                    displayName: firebaseUser.displayName || "Athlete",
+                                                    email: firebaseUser.email || "",
+                                                    streak: 0, 
+                                                    totalKm: 0, 
+                                                    shields: 1, 
+                                                    joined: Date.now(), 
+                                                    createdAt: Date.now(),
+                                                    profilePic: firebaseUser.photoURL || null, 
+                                                    photoURL: firebaseUser.photoURL || null,
+                                                    uid: firebaseUser.uid 
+                                                };
+                                            }
+                                            setUserData(newUser);
+                                            localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(newUser));
+                                            setDoc(userDocRef, newUser, { merge: true }).catch(err => console.error(err)); // Create in Firestore proper path
+                                        });
                                     }
                                 }).catch(err => {
                                     console.error("Firestore user error", err);
@@ -707,24 +720,56 @@
             const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                    setModalData({
+                        title: 'Uploading...',
+                        message: 'Saving your profile picture securely to the cloud.',
+                        content: <div className="flex justify-center"><Icon name="Loader2" className="animate-spin text-blue-600" size={32} /></div>,
+                    });
                     const reader = new FileReader();
                     reader.onloadend = async () => {
-                        const updatedUser = { ...userData, profilePic: reader.result };
-                        setUserData(updatedUser);
                         try { 
+                            const base64String = reader.result;
+                            
+                            // 1. Upload to Firebase Storage
+                            const imageRef = ref(storage, `profileImages/${userData.uid}`);
+                            await uploadString(imageRef, base64String, 'data_url');
+                            
+                            // 2. Get Download URL
+                            const downloadURL = await getDownloadURL(imageRef);
+                            
+                            // 3. Update User Data
+                            const updatedUser = { 
+                                ...userData, 
+                                profilePic: downloadURL,
+                                photoURL: downloadURL
+                            };
+                            setUserData(updatedUser);
                             localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser)); 
                             
                             // ---- NEW FIRESTORE SYNC ----
                             if (userData && userData.uid) {
-                                const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
-                                await setDoc(userDocRef, updatedUser);
+                                const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid);
+                                await setDoc(userDocRef, updatedUser, { merge: true });
+                                
+                                // Backwards compatibility legacy update
+                                const legacyDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
+                                await setDoc(legacyDocRef, updatedUser, { merge: true });
                             }
                             // ---- END NEW FIRESTORE SYNC ----
 
                             if (auth.currentUser) {
-                                await updateProfile(auth.currentUser, { photoURL: reader.result });
+                                await updateProfile(auth.currentUser, { photoURL: downloadURL });
                             }
-                        } catch (err) {}
+                            setModalData(null); // close loading modal
+                        } catch (err) {
+                            console.error("Upload error", err);
+                            setModalData({
+                                title: 'Upload Failed',
+                                message: 'There was an error uploading your image to Firebase Storage.',
+                                onConfirm: () => setModalData(null),
+                                confirmText: 'Okay'
+                            });
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
@@ -880,7 +925,11 @@
 
             // Triggered after user enters a mandatory run name
             const saveCompletedRun = async (runName) => {
-                const summary = { ...pendingRun, name: runName };
+                const summary = { 
+                    ...pendingRun, 
+                    name: runName,
+                    createdAt: Date.now()
+                };
                 setLastSummary(summary);
                 
                 const updatedRuns = [summary, ...runs];
@@ -901,8 +950,13 @@
                     try {
                         const runDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'runs', String(summary.id));
                         await setDoc(runDocRef, summary);
-                        const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
-                        await setDoc(userDocRef, updatedUser);
+                        
+                        const userDocRef = doc(db, 'artifacts', appId, 'users', userData.uid);
+                        await setDoc(userDocRef, updatedUser, { merge: true });
+                        
+                        // Legacy user data sync
+                        const legacyUserDocRef = doc(db, 'artifacts', appId, 'users', userData.uid, 'profile', 'data');
+                        await setDoc(legacyUserDocRef, updatedUser, { merge: true });
                     } catch(e) { console.error("Sync error:", e); }
                 }
                 // ---- END NEW FIRESTORE SYNC ----
