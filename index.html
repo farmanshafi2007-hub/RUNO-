@@ -258,7 +258,7 @@
 
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -545,18 +545,48 @@
                             // }
 
                             try {
-                                const savedUser = localStorage.getItem('runo_user');
-                                const savedRuns = localStorage.getItem('runo_history');
+                                // MIGRATION LOGIC TO SAVE EXISTING DATA ACROSS ACCOUNTS
+                                const legacyUserStr = localStorage.getItem('runo_user');
+                                if (legacyUserStr) {
+                                    const legacyUser = JSON.parse(legacyUserStr);
+                                    // If this legacy data has no UID, or if it matches the current user, migrate it.
+                                    if (!legacyUser.uid || legacyUser.uid === firebaseUser.uid) {
+                                        localStorage.setItem('runo_user_' + firebaseUser.uid, legacyUserStr);
+                                        const legacyRuns = localStorage.getItem('runo_history');
+                                        if (legacyRuns) localStorage.setItem('runo_history_' + firebaseUser.uid, legacyRuns);
+                                        
+                                        // Remove legacy keys so they don't get migrated to the next random account that logs in
+                                        localStorage.removeItem('runo_user');
+                                        localStorage.removeItem('runo_history');
+                                    }
+                                }
+
+                                // Load User-Specific Data securely
+                                const savedUser = localStorage.getItem('runo_user_' + firebaseUser.uid);
+                                const savedRuns = localStorage.getItem('runo_history_' + firebaseUser.uid);
                                 
                                 if (savedUser) {
                                     setUserData(JSON.parse(savedUser));
                                 } else {
-                                    const newUser = { name: "Athlete", streak: 0, totalKm: 0, shields: 1, joined: Date.now(), profilePic: null, uid: firebaseUser.uid };
+                                    // Pull in dynamic values from Firebase Auth if available (like Google Sign In Name/Photo)
+                                    const newUser = { 
+                                        name: firebaseUser.displayName || "Athlete", 
+                                        streak: 0, 
+                                        totalKm: 0, 
+                                        shields: 1, 
+                                        joined: Date.now(), 
+                                        profilePic: firebaseUser.photoURL || null, 
+                                        uid: firebaseUser.uid 
+                                    };
                                     setUserData(newUser);
-                                    localStorage.setItem('runo_user', JSON.stringify(newUser));
+                                    localStorage.setItem('runo_user_' + firebaseUser.uid, JSON.stringify(newUser));
                                 }
                                 
-                                if (savedRuns) setRuns(JSON.parse(savedRuns));
+                                if (savedRuns) {
+                                    setRuns(JSON.parse(savedRuns));
+                                } else {
+                                    setRuns([]); // Reset runs for new user to prevent data bleed
+                                }
                                 
                                 // FIX: Only transition to home if we are coming from initial splash or onboarding
                                 setView((currentView) => {
@@ -584,14 +614,21 @@
                 return () => clearTimeout(timer);
             }, []); // Removed `view` dependency to prevent infinite loops and forced re-routing
 
-            const handleImageUpload = (e) => {
+            const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => {
+                    reader.onloadend = async () => {
                         const updatedUser = { ...userData, profilePic: reader.result };
                         setUserData(updatedUser);
-                        try { localStorage.setItem('runo_user', JSON.stringify(updatedUser)); } catch (err) {}
+                        try { 
+                            localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser)); 
+                            
+                            // Also try to save it to Firebase Auth to persist across completely fresh devices!
+                            if (auth.currentUser) {
+                                await updateProfile(auth.currentUser, { photoURL: reader.result });
+                            }
+                        } catch (err) {}
                     };
                     reader.readAsDataURL(file);
                 }
@@ -752,7 +789,7 @@
                 
                 const updatedRuns = [summary, ...runs];
                 setRuns(updatedRuns);
-                localStorage.setItem('runo_history', JSON.stringify(updatedRuns));
+                localStorage.setItem('runo_history_' + userData.uid, JSON.stringify(updatedRuns));
 
                 const finalDistanceKm = summary.distance / 1000;
                 const updatedUser = { 
@@ -761,7 +798,7 @@
                     totalKm: (userData?.totalKm || 0) + finalDistanceKm 
                 };
                 setUserData(updatedUser);
-                localStorage.setItem('runo_user', JSON.stringify(updatedUser));
+                localStorage.setItem('runo_user_' + userData.uid, JSON.stringify(updatedUser));
                 setPendingRun(null);
                 setView('post_save_share'); // Proceed to new share screen
             };
@@ -774,7 +811,7 @@
                     onConfirm: () => {
                         const newRuns = runs.filter(r => r.id !== id);
                         setRuns(newRuns);
-                        localStorage.setItem('runo_history', JSON.stringify(newRuns));
+                        localStorage.setItem('runo_history_' + userData.uid, JSON.stringify(newRuns));
                     },
                     onCancel: () => {},
                     confirmText: 'Delete',
@@ -871,6 +908,8 @@
                     message: 'Are you sure? This will securely sign you out of your account.',
                     onConfirm: async () => { 
                         try {
+                            setUserData(null); // Clear sensitive data from memory securely
+                            setRuns([]); // Clear run history from memory
                             await signOut(auth);
                             setView('onboarding'); 
                         } catch (error) {
