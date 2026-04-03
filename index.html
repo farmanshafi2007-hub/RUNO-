@@ -554,14 +554,24 @@
                                 }
                                 
                                 if (savedRuns) setRuns(JSON.parse(savedRuns));
-                                setView('home');
+                                
+                                // FIX: Only transition to home if we are coming from initial splash or onboarding
+                                setView((currentView) => {
+                                    if (currentView === 'splash' || currentView === 'onboarding') {
+                                        return 'home';
+                                    }
+                                    return currentView;
+                                });
                             } catch (e) {
                                 console.error(e);
                             }
                         } else {
-                            if (view !== 'verify_email') {
-                                setView('onboarding');
-                            }
+                            setView((currentView) => {
+                                if (currentView !== 'verify_email' && currentView !== 'public_share') {
+                                    return 'onboarding';
+                                }
+                                return currentView;
+                            });
                         }
                     });
 
@@ -569,7 +579,7 @@
                 }, 1500);
                 
                 return () => clearTimeout(timer);
-            }, [view]);
+            }, []); // Removed `view` dependency to prevent infinite loops and forced re-routing
 
             const handleImageUpload = (e) => {
                 const file = e.target.files[0];
