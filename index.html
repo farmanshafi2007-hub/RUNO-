@@ -258,7 +258,7 @@
 
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -490,6 +490,7 @@
             const [authPassword, setAuthPassword] = useState('');
             const [authError, setAuthError] = useState('');
             const [isAuthLoading, setIsAuthLoading] = useState(false);
+            const [verificationEmail, setVerificationEmail] = useState('');
 
             // ADDED FOR FIX: Hoisted from views to prevent React Hooks crash
             const [inputName, setInputName] = useState("");
@@ -532,6 +533,14 @@
                     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
                         setIsAuthLoading(false); // Reset loading state when auth state resolves
                         if (firebaseUser) {
+                            // Check if email is verified
+                            if (!firebaseUser.emailVerified) {
+                                setVerificationEmail(firebaseUser.email);
+                                signOut(auth);
+                                setView('verify_email');
+                                return;
+                            }
+
                             try {
                                 const savedUser = localStorage.getItem('runo_user');
                                 const savedRuns = localStorage.getItem('runo_history');
@@ -550,7 +559,9 @@
                                 console.error(e);
                             }
                         } else {
-                            setView('onboarding');
+                            if (view !== 'verify_email') {
+                                setView('onboarding');
+                            }
                         }
                     });
 
@@ -558,7 +569,7 @@
                 }, 1500);
                 
                 return () => clearTimeout(timer);
-            }, []);
+            }, [view]);
 
             const handleImageUpload = (e) => {
                 const file = e.target.files[0];
@@ -924,7 +935,14 @@
                     setIsAuthLoading(true);
                     setAuthError('');
                     try {
-                        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+                        const userCredential = await signInWithEmailAndPassword(auth, authEmail, authPassword);
+                        if (!userCredential.user.emailVerified) {
+                            setVerificationEmail(userCredential.user.email);
+                            await signOut(auth);
+                            setIsAuthLoading(false);
+                            setView('verify_email');
+                            return;
+                        }
                         // onAuthStateChanged handles redirect to home
                     } catch (error) {
                         setAuthError("Email or password is incorrect");
@@ -937,8 +955,12 @@
                     setIsAuthLoading(true);
                     setAuthError('');
                     try {
-                        await createUserWithEmailAndPassword(auth, authEmail, authPassword);
-                        // onAuthStateChanged handles redirect to home
+                        const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+                        await sendEmailVerification(userCredential.user);
+                        await signOut(auth); // Sign out immediately to prevent auto-login
+                        setVerificationEmail(authEmail);
+                        setIsAuthLoading(false);
+                        setView('verify_email');
                     } catch (error) {
                         if (error.code === 'auth/email-already-in-use') {
                             setAuthError("User already exists. Please sign in");
@@ -999,6 +1021,29 @@
                                 className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg fitness-card active:scale-95 transition-all uppercase tracking-tight disabled:opacity-70 flex justify-center items-center gap-2"
                             >
                                 {isAuthLoading ? <Icon name="Loader2" className="animate-spin text-white" size={24}/> : "CREATE ACCOUNT"}
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const VerifyEmailView = () => {
+                return (
+                    <div className="absolute inset-0 bg-slate-900 text-white p-8 flex flex-col justify-center items-center text-center z-[150] animate__animated animate__fadeIn w-full h-full">
+                        <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-[4px_6px_0px_#0f172a] border-2 border-slate-900">
+                            <Icon name="MessageSquare" size={48} color="white" />
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tighter mb-4 animate__animated animate__fadeInUp leading-tight">Verify<br/>Email.</h1>
+                        <p className="text-slate-300 mb-12 text-sm font-bold leading-relaxed max-w-xs">
+                            We have sent you a verification email to <span className="text-blue-400 block mt-1 text-base">{verificationEmail}</span><br/>Please verify it and log in.
+                        </p>
+                        
+                        <div className="w-full max-w-[320px] space-y-4">
+                            <button 
+                                onClick={() => setView('onboarding')} 
+                                className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-lg fitness-card active:scale-95 transition-all uppercase tracking-tight flex justify-center items-center gap-2 shadow-[4px_6px_0px_#0f172a]"
+                            >
+                                Log In
                             </button>
                         </div>
                     </div>
@@ -1676,7 +1721,7 @@
                 { id: 'profile', icon: 'User', label: 'PROFILE' } 
             ];
 
-            const hideDockViews = ['splash', 'onboarding', 'privacy', 'save_run', 'post_save_share', 'public_share', 'history'];
+            const hideDockViews = ['splash', 'onboarding', 'verify_email', 'privacy', 'save_run', 'post_save_share', 'public_share', 'history'];
 
             return (
                 <div className="fixed inset-0 w-full h-full bg-slate-100 overflow-hidden">
@@ -1687,6 +1732,7 @@
                     {view === 'profile' && Profile()}
                     {view === 'privacy' && Privacy()}
                     {view === 'onboarding' && Onboarding()}
+                    {view === 'verify_email' && VerifyEmailView()}
                     {view === 'save_run' && SaveRunModal()}
                     {view === 'post_save_share' && PostSaveShareView()}
                     {view === 'history' && HistoryView()}
